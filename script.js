@@ -396,9 +396,9 @@ async function openGamePage(gameId) {
                     </div>
                     
                     <div class="game-video-section">
-                        <h3>Promotional Video</h3>
+                        <h3>Game Guides</h3>
                         <div class="video-wrapper">
-                            <iframe src="https://www.youtube.com/embed/tVT8gtRFsQ4" title="Find Them All Rick! - Promotional Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            <iframe src="https://www.youtube.com/embed/6fLOIskT93E" title="Find them all, Rick! | Game guides 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                         </div>
                     </div>
                 </div>

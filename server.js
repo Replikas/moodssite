@@ -57,18 +57,18 @@ app.get('/api/games', async (req, res) => {
     try {
         const result = await client.query(`
             SELECT g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at,
-                   CASE WHEN g.pc_file_data IS NOT NULL THEN true ELSE false END as has_pc_version,
-                   CASE WHEN g.android_file_data IS NOT NULL THEN true ELSE false END as has_android_version,
-                   COALESCE(SUM(CASE WHEN ul.liked = true THEN 1 ELSE 0 END), 0) as total_likes
+                   true as has_pc_version,
+                   false as has_android_version,
+                   COALESCE(COUNT(ul.id), 0) as user_likes_count
             FROM games g
             LEFT JOIN user_likes ul ON g.id = ul.game_id
-            GROUP BY g.id, g.title, g.description, g.icon, g.pc_file_data, g.android_file_data, g.likes, g.downloads, g.created_at
+            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at
             ORDER BY g.created_at DESC
         `);
         
         const games = result.rows.map(game => ({
             ...game,
-            total_likes: parseInt(game.likes) + parseInt(game.actual_likes)
+            total_likes: parseInt(game.likes) + parseInt(game.user_likes_count)
         }));
         
         res.json(games);
