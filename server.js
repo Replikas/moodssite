@@ -4,38 +4,21 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const admin = require('firebase-admin');
+const stream = require('stream');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_KUVpudE1k2yR@ep-plain-brook-a82aore9-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
 
-// Initialize Firebase Admin SDK
-const serviceAccount = {
-    type: "service_account",
-    project_id: "moodysgames-storage",
-    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    client_id: process.env.FIREBASE_CLIENT_ID,
-    auth_uri: "https://accounts.google.com/o/oauth2/auth",
-    token_uri: "https://oauth2.googleapis.com/token",
-    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-    client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
-};
+// Initialize Google Drive API
+const { google } = require('googleapis');
+const drive = google.drive({
+  version: 'v3',
+  auth: process.env.GOOGLE_DRIVE_API_KEY
+});
 
-try {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        storageBucket: "moodysgames-storage.appspot.com"
-    });
-    console.log('Firebase Admin SDK initialized successfully');
-} catch (error) {
-    console.log('Firebase initialization skipped (missing credentials):', error.message);
-}
-
-const bucket = admin.storage().bucket();
+console.log('Google Drive API initialized');
 
 // Middleware
 app.use(cors());
@@ -130,50 +113,74 @@ app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { n
         let androidFileUrl = null;
         let androidFileName = null;
         
-        // Upload PC file to Firebase Storage if provided
+        // Upload PC file to Google Drive if provided
         if (req.files && req.files.pcFile) {
             const pcFile = req.files.pcFile[0];
             pcFileName = pcFile.originalname;
-            const pcFileRef = bucket.file(`games/${gameId}/pc/${pcFileName}`);
             
-            console.log('Uploading PC File:', pcFileName, `${pcFile.buffer.length} bytes`);
+            console.log('Uploading PC File to Google Drive:', pcFileName, `${pcFile.buffer.length} bytes`);
             
-            await pcFileRef.save(pcFile.buffer, {
-                metadata: {
-                    contentType: pcFile.mimetype,
-                    metadata: {
-                        gameId: gameId,
-                        platform: 'pc'
-                    }
+            const pcFileMetadata = {
+                name: `${gameId}_pc_${pcFileName}`,
+                parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
+            };
+            
+            const pcMedia = {
+                 mimeType: pcFile.mimetype,
+                 body: stream.Readable.from(pcFile.buffer)
+             };
+            
+            const pcUploadResult = await drive.files.create({
+                resource: pcFileMetadata,
+                media: pcMedia,
+                fields: 'id'
+            });
+            
+            // Make file public
+            await drive.permissions.create({
+                fileId: pcUploadResult.data.id,
+                resource: {
+                    role: 'reader',
+                    type: 'anyone'
                 }
             });
             
-            // Make file publicly accessible
-            await pcFileRef.makePublic();
-            pcFileUrl = `https://storage.googleapis.com/moodysgames-storage.appspot.com/games/${gameId}/pc/${encodeURIComponent(pcFileName)}`;
+            pcFileUrl = `https://www.googleapis.com/drive/v3/files/${pcUploadResult.data.id}?alt=media&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
         }
         
-        // Upload Android file to Firebase Storage if provided
+        // Upload Android file to Google Drive if provided
         if (req.files && req.files.androidFile) {
             const androidFile = req.files.androidFile[0];
             androidFileName = androidFile.originalname;
-            const androidFileRef = bucket.file(`games/${gameId}/android/${androidFileName}`);
             
-            console.log('Uploading Android File:', androidFileName, `${androidFile.buffer.length} bytes`);
+            console.log('Uploading Android File to Google Drive:', androidFileName, `${androidFile.buffer.length} bytes`);
             
-            await androidFileRef.save(androidFile.buffer, {
-                metadata: {
-                    contentType: androidFile.mimetype,
-                    metadata: {
-                        gameId: gameId,
-                        platform: 'android'
-                    }
+            const androidFileMetadata = {
+                name: `${gameId}_android_${androidFileName}`,
+                parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
+            };
+            
+            const androidMedia = {
+                 mimeType: androidFile.mimetype,
+                 body: stream.Readable.from(androidFile.buffer)
+             };
+            
+            const androidUploadResult = await drive.files.create({
+                resource: androidFileMetadata,
+                media: androidMedia,
+                fields: 'id'
+            });
+            
+            // Make file public
+            await drive.permissions.create({
+                fileId: androidUploadResult.data.id,
+                resource: {
+                    role: 'reader',
+                    type: 'anyone'
                 }
             });
             
-            // Make file publicly accessible
-            await androidFileRef.makePublic();
-            androidFileUrl = `https://storage.googleapis.com/moodysgames-storage.appspot.com/games/${gameId}/android/${encodeURIComponent(androidFileName)}`;
+            androidFileUrl = `https://www.googleapis.com/drive/v3/files/${androidUploadResult.data.id}?alt=media&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
         }
         
         // Use UPSERT to either insert new game or update existing one
@@ -363,7 +370,7 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
             [gameId]
         );
         
-        // Redirect to Firebase Storage URL
+        // Redirect to Google Drive URL
         res.redirect(fileUrl);
     } catch (error) {
         console.error('Error downloading game:', error);
@@ -390,7 +397,7 @@ app.get('/api/games/:id/download/android', async (req, res) => {
         
         await client.end();
         
-        // Redirect to Firebase Storage URL
+        // Redirect to Google Drive URL
         res.redirect(game.android_file_url);
     } catch (error) {
         console.error('Error downloading Android file:', error);
