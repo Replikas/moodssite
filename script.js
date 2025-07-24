@@ -7,6 +7,20 @@ let modalSlideTimer = null;
 // API base URL
 const API_BASE = '/api';
 
+// Anti-sleep ping to keep server awake on free hosting
+function keepServerAwake() {
+    fetch(`${API_BASE}/health`)
+        .then(response => response.json())
+        .then(data => console.log('Keep-alive ping:', data.timestamp))
+        .catch(error => console.log('Keep-alive ping failed:', error));
+}
+
+// Ping server every 10 minutes (600,000 ms) to prevent sleep
+setInterval(keepServerAwake, 10 * 60 * 1000);
+
+// Initial ping when page loads
+keepServerAwake();
+
 // Screenshot slider functionality
 function changeSlide(button, direction) {
     const slider = button.closest('.screenshot-slider');
