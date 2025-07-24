@@ -267,10 +267,7 @@
                     <textarea id="gameDescription" name="description" required></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="gameIcon">Icon (Font Awesome class, e.g., fas fa-rocket)</label>
-                    <input type="text" id="gameIcon" name="icon" placeholder="fas fa-rocket" required>
-                </div>
+
                 
                 <div class="form-group">
                         <label for="pcUrl">PC Download URL (Google Drive, Dropbox, etc.)</label>
@@ -384,14 +381,13 @@
             
             const formData = new FormData(e.target);
             const title = formData.get('title');
-            const description = formData.get('description');
-            const icon = formData.get('icon');
+)            const description = formData.get('description');
             const pcUrl = formData.get('pcUrl');
             const androidUrl = formData.get('androidUrl');
             
             // Validate required fields
-            if (!title || !description || !icon) {
-                showMessage('Please fill in all required fields: Title, Description, and Icon', 'error');
+            if (!title || !description) {
+                showMessage('Please fill in all required fields: Title and Description', 'error');
                 return;
             }
             
@@ -415,7 +411,6 @@
             const jsonData = {
                 title,
                 description,
-                icon,
                 pcUrl: pcUrl || null,
                 androidUrl: androidUrl || null
             };
@@ -739,10 +734,7 @@
                                 <label style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
                                 <textarea id="editDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;" required>${game.description}</textarea>
                             </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Icon (Font Awesome class):</label>
-                                <input type="text" id="editIcon" value="${game.icon}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
-                            </div>
+
                             <div>
                                 <label style="display: block; margin-bottom: 5px; font-weight: bold;">PC Download URL:</label>
                                 <input type="url" id="editPcUrl" value="${game.pc_file_url || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="https://drive.google.com/file/d/FILE_ID/view">
@@ -767,11 +759,10 @@
                     
                     const title = document.getElementById('editTitle').value;
                     const description = document.getElementById('editDescription').value;
-                    const icon = document.getElementById('editIcon').value;
                     const pcUrl = document.getElementById('editPcUrl').value;
                     const androidUrl = document.getElementById('editAndroidUrl').value;
                     
-                    if (!title || !description || !icon) {
+                    if (!title || !description) {
                         showMessage('Please fill in all required fields', 'error');
                         return;
                     }
@@ -789,8 +780,7 @@
                             },
                             body: JSON.stringify({
                                 title,
-                                description,
-                                icon,
+ direct                                description,
                                 pcUrl,
                                 androidUrl
                             })
