@@ -40,10 +40,17 @@ function getClientIP(req) {
 function convertToDirectDownloadUrl(url) {
     if (!url) return url;
     
-    // Check if it's a Google Drive sharing URL
-    const driveMatch = url.match(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (driveMatch) {
-        const fileId = driveMatch[1];
+    // Check if it's a Google Drive sharing URL with /view format
+    const driveViewMatch = url.match(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
+    if (driveViewMatch) {
+        const fileId = driveViewMatch[1];
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    }
+    
+    // Check if it's a Google Drive sharing URL with /open format
+    const driveOpenMatch = url.match(/https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (driveOpenMatch) {
+        const fileId = driveOpenMatch[1];
         return `https://drive.google.com/uc?export=download&id=${fileId}`;
     }
     
@@ -147,6 +154,35 @@ app.delete('/api/admin/games/:gameId', async (req, res) => {
     } catch (error) {
         console.error('Error deleting game:', error);
         res.status(500).json({ error: 'Failed to delete game' });
+    }
+});
+
+// Update game information
+app.put('/api/admin/games/:gameId', async (req, res) => {
+    try {
+        const { gameId } = req.params;
+        const { title, description, icon, pcUrl, androidUrl } = req.body;
+        
+        // Check if game exists
+        const existingGame = await client.query(
+            'SELECT * FROM games WHERE id = $1',
+            [gameId]
+        );
+        
+        if (existingGame.rows.length === 0) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+        
+        // Update the game
+        const result = await client.query(
+            'UPDATE games SET title = $1, description = $2, icon = $3, pc_file_url = $4, android_file_url = $5 WHERE id = $6 RETURNING *',
+            [title, description, icon, pcUrl, androidUrl, gameId]
+        );
+        
+        res.json({ message: 'Game updated successfully', game: result.rows[0] });
+    } catch (error) {
+        console.error('Error updating game:', error);
+        res.status(500).json({ error: 'Failed to update game' });
     }
 });
 

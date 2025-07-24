@@ -356,9 +356,14 @@
                             <p>${game.description.substring(0, 100)}...</p>
                             <p><strong>Status:</strong> ${game.status}</p>
                         </div>
-                        <button class="delete-btn" onclick="deleteGame(${game.id})">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="edit-btn" onclick="editGame('${game.id}')" style="background: #2196F3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="delete-btn" onclick="deleteGame(${game.id})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             } catch (error) {
@@ -701,11 +706,117 @@
             document.getElementById('adminPanel').style.display = 'block';
         }
 
+        // Edit game function
+        async function editGame(gameId) {
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}`);
+                const game = await response.json();
+                
+                if (!game) {
+                    showMessage('Game not found', 'error');
+                    return;
+                }
+                
+                // Create edit modal
+                const editModal = document.createElement('div');
+                editModal.className = 'popup-overlay';
+                editModal.innerHTML = `
+                    <div class="popup-message" style="max-width: 600px; background: white; color: #333;">
+                        <h3 style="color: #1565c0; margin-bottom: 20px;">Edit Game: ${game.title}</h3>
+                        <form id="editGameForm" style="display: grid; gap: 15px; text-align: left;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Title:</label>
+                                <input type="text" id="editTitle" value="${game.title}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
+                                <textarea id="editDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;" required>${game.description}</textarea>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Icon (Font Awesome class):</label>
+                                <input type="text" id="editIcon" value="${game.icon}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">PC Download URL:</label>
+                                <input type="url" id="editPcUrl" value="${game.pc_file_url || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="https://drive.google.com/file/d/FILE_ID/view">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Android Download URL:</label>
+                                <input type="url" id="editAndroidUrl" value="${game.android_file_url || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="https://drive.google.com/file/d/FILE_ID/view">
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                                <button type="submit" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Update Game</button>
+                                <button type="button" onclick="closeEditModal()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                
+                document.body.appendChild(editModal);
+                
+                // Handle form submission
+                document.getElementById('editGameForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const title = document.getElementById('editTitle').value;
+                    const description = document.getElementById('editDescription').value;
+                    const icon = document.getElementById('editIcon').value;
+                    const pcUrl = document.getElementById('editPcUrl').value;
+                    const androidUrl = document.getElementById('editAndroidUrl').value;
+                    
+                    if (!title || !description || !icon) {
+                        showMessage('Please fill in all required fields', 'error');
+                        return;
+                    }
+                    
+                    if (!pcUrl && !androidUrl) {
+                        showMessage('Please provide at least one download URL', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/admin/games/${gameId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                title,
+                                description,
+                                icon,
+                                pcUrl,
+                                androidUrl
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            showMessage('Game updated successfully!', 'success');
+                            closeEditModal();
+                            loadGames();
+                        } else {
+                            const errorData = await response.json();
+                            showMessage(`Failed to update game: ${errorData.error}`, 'error');
+                        }
+                    } catch (error) {
+                        showMessage('Failed to update game. Please try again.', 'error');
+                    }
+                });
+                
+            } catch (error) {
+                showMessage('Failed to load game data', 'error');
+            }
+        }
+        
+        function closeEditModal() {
+            const editModal = document.querySelector('.popup-overlay');
+            if (editModal) {
+                editModal.remove();
+            }
+        }
+
         // Load games and populate select on page load
         loadGames();
         populateGameSelect();
     </script>
-        </div>
-    </main>
 </body>
 </html>
