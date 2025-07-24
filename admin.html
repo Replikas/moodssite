@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Moody's Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            border: 2px solid #1976d2;
+        }
+        
+        .admin-title {
+            text-align: center;
+            color: #1565c0;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: none;
+        }
+        
+        .upload-form {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            color: #1565c0;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 1rem;
+            border: 2px solid #bbdefb;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1565c0;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 10px rgba(25, 118, 210, 0.3);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(45deg, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(25, 118, 210, 0.4);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .games-list {
+            margin-top: 3rem;
+        }
+        
+        .games-list h3 {
+            color: #1565c0;
+            margin-bottom: 1rem;
+        }
+        
+        .game-item {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #e3f2fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .game-info h4 {
+            color: #1565c0;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .game-info p {
+            color: #424242;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .delete-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+        
+        .success-message,
+        .error-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="index.html">Moody's Games</a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Back to Games</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Login Form -->
+        <div id="loginContainer" class="admin-container">
+            <h1 class="admin-title"><i class="fas fa-lock"></i> Admin Login</h1>
+            <form id="loginForm" class="upload-form">
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+                </div>
+                <button type="submit" class="upload-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+        </div>
+
+        <!-- Admin Panel (hidden by default) -->
+        <div id="adminPanel" class="admin-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 class="admin-title"><i class="fas fa-cog"></i> Admin Panel</h1>
+                <button onclick="logout()" class="upload-btn" style="background: #f44336;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+            
+            <div id="message-container"></div>
+            
+            <form class="upload-form" id="gameUploadForm">
+                <div class="form-group">
+                    <label for="gameTitle">Game Title</label>
+                    <input type="text" id="gameTitle" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gameDescription">Description</label>
+                    <textarea id="gameDescription" name="description" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gameIcon">Icon (Font Awesome class, e.g., fas fa-rocket)</label>
+                    <input type="text" id="gameIcon" name="icon" placeholder="fas fa-rocket" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pcFile">PC Version (ZIP, RAR, EXE, etc.)</label>
+                    <input type="file" id="pcFile" name="pcFile" accept=".zip,.rar,.exe,.msi,.dmg,.pkg,.deb,.rpm">
+                </div>
+                
+                <div class="form-group">
+                    <label for="androidFile">Android Version (APK)</label>
+                    <input type="file" id="androidFile" name="androidFile" accept=".apk">
+                </div>
+                
+                <div class="form-group">
+                    <small style="color: #666;">Note: At least one platform version is required</small>
+                </div>
+                
+                <button type="submit" class="upload-btn">
+                    <i class="fas fa-upload"></i> Upload Game
+                </button>
+            </form>
+            
+            <div class="games-list">
+                <h3><i class="fas fa-list"></i> Manage Games</h3>
+                <div id="gamesList"></div>
+            </div>
+            
+            <div class="screenshot-management">
+                <h3><i class="fas fa-images"></i> Manage Screenshots</h3>
+                
+                <div class="form-group">
+                    <label for="gameSelect">Select Game:</label>
+                    <select id="gameSelect" onchange="loadScreenshots()">
+                        <option value="">Choose a game...</option>
+                    </select>
+                </div>
+                
+                <form id="screenshotUploadForm" style="display: none;">
+                    <div class="form-group">
+                        <label for="screenshotFile">Screenshot Image:</label>
+                        <input type="file" id="screenshotFile" name="screenshot" accept="image/*" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="altText">Alt Text (Description):</label>
+                        <input type="text" id="altText" name="altText" placeholder="Describe the screenshot...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="isCover" name="isCover"> Set as Cover Image
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="upload-btn">
+                        <i class="fas fa-upload"></i> Upload Screenshot
+                    </button>
+                </form>
+                
+                <div id="screenshotsList" style="display: none;">
+                    <h4>Current Screenshots:</h4>
+                    <div id="screenshotsContainer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        
+        // Load existing games
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const games = await response.json();
+                
+                const gamesList = document.getElementById('gamesList');
+                gamesList.innerHTML = games.map(game => `
+                    <div class="game-item">
+                        <div class="game-info">
+                            <h4><i class="${game.icon}"></i> ${game.title}</h4>
+                            <p>${game.description.substring(0, 100)}...</p>
+                            <p><strong>Status:</strong> ${game.status}</p>
+                        </div>
+                        <button class="delete-btn" onclick="deleteGame(${game.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showMessage('Failed to load games', 'error');
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('gameUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const pcFile = formData.get('pcFile');
+            const androidFile = formData.get('androidFile');
+            
+            // Validate that at least one file is uploaded
+            if ((!pcFile || pcFile.size === 0) && (!androidFile || androidFile.size === 0)) {
+                showMessage('Please upload at least one platform version (PC or Android)', 'error');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/games`, {
+                    method: 'POST',
+                    body: formData // Send FormData directly for file upload
+                });
+                
+                if (response.ok) {
+                    showMessage('Game uploaded successfully!', 'success');
+                    e.target.reset();
+                    loadGames();
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Upload failed');
+                }
+            } catch (error) {
+                showMessage(`Failed to upload game: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Game';
+            }
+        });
+        
+        // Delete game
+        async function deleteGame(gameId) {
+            if (!confirm('Are you sure you want to delete this game?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/games/${gameId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Game deleted successfully!', 'success');
+                    loadGames();
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (error) {
+                showMessage('Failed to delete game. Please try again.', 'error');
+            }
+        }
+        
+        // Show message
+        function showMessage(text, type) {
+            const container = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${type}-message`;
+            messageDiv.textContent = text;
+            
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+        
+        // Screenshot management functions
+        async function populateGameSelect() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const games = await response.json();
+                
+                const gameSelect = document.getElementById('gameSelect');
+                gameSelect.innerHTML = '<option value="">Choose a game...</option>';
+                
+                games.forEach(game => {
+                    const option = document.createElement('option');
+                    option.value = game.id;
+                    option.textContent = game.title;
+                    gameSelect.appendChild(option);
+                });
+            } catch (error) {
+                showMessage('Failed to load games for screenshot management', 'error');
+            }
+        }
+        
+        async function loadScreenshots() {
+            const gameId = document.getElementById('gameSelect').value;
+            const screenshotForm = document.getElementById('screenshotUploadForm');
+            const screenshotsList = document.getElementById('screenshotsList');
+            
+            if (!gameId) {
+                screenshotForm.style.display = 'none';
+                screenshotsList.style.display = 'none';
+                return;
+            }
+            
+            screenshotForm.style.display = 'block';
+            screenshotsList.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/screenshots`);
+                const screenshots = await response.json();
+                
+                const container = document.getElementById('screenshotsContainer');
+                container.innerHTML = screenshots.map(screenshot => `
+                    <div class="screenshot-item" style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                        <img src="images/${screenshot.filename}" alt="${screenshot.alt_text}" style="max-width: 200px; height: auto; display: block; margin-bottom: 10px;">
+                        <p><strong>Alt Text:</strong> ${screenshot.alt_text}</p>
+                        <p><strong>Cover:</strong> ${screenshot.is_cover ? 'Yes' : 'No'}</p>
+                        <p><strong>Order:</strong> ${screenshot.display_order}</p>
+                        <div style="margin-top: 10px;">
+                            <button onclick="setCover(${screenshot.id})" ${screenshot.is_cover ? 'disabled' : ''} style="margin-right: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px;">
+                                ${screenshot.is_cover ? 'Current Cover' : 'Set as Cover'}
+                            </button>
+                            <button onclick="deleteScreenshot(${screenshot.id})" style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px;">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                showMessage('Failed to load screenshots', 'error');
+            }
+        }
+        
+        // Handle screenshot upload
+        document.getElementById('screenshotUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const gameId = document.getElementById('gameSelect').value;
+            if (!gameId) {
+                showMessage('Please select a game first', 'error');
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            formData.append('isCover', document.getElementById('isCover').checked);
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/games/${gameId}/screenshots`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showMessage('Screenshot uploaded successfully!', 'success');
+                    e.target.reset();
+                    loadScreenshots(); // Reload screenshots
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Failed to upload screenshot', 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to upload screenshot', 'error');
+            }
+        });
+        
+        async function setCover(screenshotId) {
+            try {
+                const response = await fetch(`${API_BASE}/admin/screenshots/${screenshotId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ isCover: true })
+                });
+                
+                if (response.ok) {
+                    showMessage('Cover image updated successfully!', 'success');
+                    loadScreenshots(); // Reload screenshots
+                } else {
+                    showMessage('Failed to update cover image', 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to update cover image', 'error');
+            }
+        }
+        
+        async function deleteScreenshot(screenshotId) {
+            if (!confirm('Are you sure you want to delete this screenshot?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/screenshots/${screenshotId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showMessage('Screenshot deleted successfully!', 'success');
+                    loadScreenshots(); // Reload screenshots
+                } else {
+                    showMessage('Failed to delete screenshot', 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to delete screenshot', 'error');
+            }
+        }
+        
+        // Login/Logout functionality
+        const ADMIN_PASSWORD = 'moody2025'; // Change this to your desired password
+        
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                sessionStorage.setItem('adminLoggedIn', 'true');
+            } else {
+                alert('Incorrect password!');
+                document.getElementById('adminPassword').value = '';
+            }
+        });
+        
+        function logout() {
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            sessionStorage.removeItem('adminLoggedIn');
+            document.getElementById('adminPassword').value = '';
+        }
+        
+        // Check if already logged in
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+        }
+
+        // Load games and populate select on page load
+        loadGames();
+        populateGameSelect();
+    </script>
+        </div>
+    </main>
+</body>
+</html>

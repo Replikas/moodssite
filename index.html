@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rick & Morty Games Hub</title>
+    <link rel="stylesheet" href="styles.css?v=3">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-rocket"></i>
+                <span>Moody's Games</span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#games" class="nav-link">Games</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> Admin</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-sprites">
+                <!-- Future walking sprites will go here -->
+            </div>
+            <div class="hero-content">
+                <h1 class="hero-title">Welcome to the Multiverse of Gaming</h1>
+                <p class="hero-subtitle">Discover Rick and Morty games created by Moody</p>
+                <button class="cta-button" onclick="scrollToGames()">Explore Games</button>
+            </div>
+        </section>
+
+        <section id="games" class="games-section">
+            <div class="container">
+                <h2 class="section-title">Featured Games</h2>
+                <div class="games-grid">
+                    <!-- Navigation buttons -->
+                    <button class="games-nav prev" onclick="changeGameSlide(-1)">‹</button>
+                    <button class="games-nav next" onclick="changeGameSlide(1)">›</button>
+                    <!-- Game cards will be dynamically loaded here -->
+
+                    <!-- Game cards will be dynamically loaded here -->
+                <div class="game-card coming-soon">
+                    <div class="game-image">
+                        <div class="coming-soon-content">
+                            <i class="fas fa-clock"></i>
+                            <h3>Coming Soon</h3>
+                            <p>More games on the way!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="game-card coming-soon">
+                    <div class="game-image">
+                        <div class="coming-soon-content">
+                            <i class="fas fa-clock"></i>
+                            <h3>Coming Soon</h3>
+                            <p>More games on the way!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="game-card coming-soon">
+                    <div class="game-image">
+                        <div class="coming-soon-content">
+                            <i class="fas fa-clock"></i>
+                            <h3>Coming Soon</h3>
+                            <p>More games on the way!</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <!-- Game indicators -->
+                <div class="games-indicators" id="gameIndicators">
+                    <!-- Indicators will be dynamically generated -->
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <div class="container">
+                <h2 class="section-title">About moodyminus</h2>
+                <div class="about-content">
+                    <p>Welcome to the multiverse of Rick and Morty gaming! moodyminus is a passionate developer who creates immersive experiences that capture the chaotic brilliance of the beloved animated series. Each game is crafted with attention to detail, humor, and the unpredictable nature that makes Rick and Morty so special.</p>
+                    <p>Follow moodyminus on this interdimensional journey and experience adventures that span across infinite realities!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Moody's Games - Rick & Morty Hub. All rights reserved.</p>
+            <div class="social-links">
+                <a href="https://x.com/MoodyMinus?t=atqBAUkAwEH_eFWLyUCItQ&s=09" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="https://www.youtube.com/@moodyplusminus5952" target="_blank"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Game Detail Modal -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeGameModal()">&times;</span>
+            <div id="gameDetails"></div>
+        </div>
+    </div>
+
+    <!-- Image Overlay for Fullscreen Screenshots -->
+    <div id="imageOverlay" class="image-overlay">
+        <span class="close" onclick="closeImageOverlay()">&times;</span>
+        <img id="overlayImage" src="" alt="">
+    </div>
+
+    <script src="script.js?v=2"></script>
+</body>
+</html>
