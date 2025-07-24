@@ -14,7 +14,3 @@ services:
           type: web
           name: moodssite
           property: port
-    disk:
-      name: uploads
-      mountPath: /opt/render/project/src/games
-      sizeGB: 1

@@ -19,9 +19,13 @@ app.use(express.static('.'));
 const upload = multer({ 
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 500 * 1024 * 1024 // 500MB limit
+        fileSize: 100 * 1024 * 1024, // Reduced to 100MB for Render compatibility
+        fieldSize: 100 * 1024 * 1024,
+        fields: 10,
+        files: 2
     },
     fileFilter: function (req, file, cb) {
+        console.log('File upload attempt:', file.originalname, file.mimetype, file.size);
         // Allow common game file formats
         const allowedTypes = ['.zip', '.rar', '.exe', '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.apk'];
         const fileExt = path.extname(file.originalname).toLowerCase();
@@ -81,13 +85,24 @@ app.get('/api/games', async (req, res) => {
 // Admin Routes
 app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { name: 'androidFile', maxCount: 1 }]), async (req, res) => {
     try {
+        console.log('Upload request received');
+        console.log('Body:', req.body);
+        console.log('Files:', req.files ? Object.keys(req.files) : 'No files');
+        
         const { title, description, icon } = req.body;
+        
+        if (!title || !description || !icon) {
+            return res.status(400).json({ error: 'Title, description, and icon are required' });
+        }
         
         // Get file data from uploaded files
         const pcFileData = req.files && req.files.pcFile ? req.files.pcFile[0].buffer : null;
         const pcFileName = req.files && req.files.pcFile ? req.files.pcFile[0].originalname : null;
         const androidFileData = req.files && req.files.androidFile ? req.files.androidFile[0].buffer : null;
         const androidFileName = req.files && req.files.androidFile ? req.files.androidFile[0].originalname : null;
+        
+        console.log('PC File:', pcFileName, pcFileData ? `${pcFileData.length} bytes` : 'None');
+        console.log('Android File:', androidFileName, androidFileData ? `${androidFileData.length} bytes` : 'None');
         
         // Generate unique ID for the game
         const gameId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -459,9 +474,36 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
+// Test upload endpoint
+app.post('/api/test-upload', upload.single('testFile'), (req, res) => {
+    console.log('Test upload received');
+    console.log('Body:', req.body);
+    console.log('File:', req.file ? req.file.originalname : 'No file');
+    res.json({ 
+        success: true, 
+        body: req.body, 
+        file: req.file ? {
+            originalname: req.file.originalname,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        } : null 
+    });
+});
+
+// Multer error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    if (err instanceof multer.MulterError) {
+        console.error('Multer error:', err.message);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File too large. Maximum size is 100MB.' });
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({ error: 'Unexpected file field.' });
+        }
+        return res.status(400).json({ error: err.message });
+    }
+    
+    console.error('General error:', err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
@@ -474,4 +516,6 @@ app.listen(PORT, () => {
     console.log('  POST /api/games/:gameId/like');
     console.log('  POST /api/games/:gameId/comments');
     console.log('  POST /api/games/:gameId/download');
+    console.log('  POST /api/admin/games (upload)');
+    console.log('Environment:', process.env.NODE_ENV || 'development');
 });
