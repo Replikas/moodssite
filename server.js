@@ -25,7 +25,7 @@ const upload = multer({
         files: 2
     },
     fileFilter: function (req, file, cb) {
-        console.log('File upload attempt:', file.originalname, file.mimetype, file.size);
+        console.log('File upload attempt:', file.originalname, file.mimetype);
         // Allow common game file formats
         const allowedTypes = ['.zip', '.rar', '.exe', '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.apk'];
         const fileExt = path.extname(file.originalname).toLowerCase();
@@ -495,7 +495,7 @@ app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         console.error('Multer error:', err.message);
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File too large. Maximum size is 100MB.' });
+            return res.status(400).json({ error: 'File too large. Maximum size is 500MB.' });
         }
         if (err.code === 'LIMIT_UNEXPECTED_FILE') {
             return res.status(400).json({ error: 'Unexpected file field.' });
