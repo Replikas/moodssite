@@ -57,12 +57,12 @@ app.get('/api/games', async (req, res) => {
     try {
         const result = await client.query(`
             SELECT g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at,
-                   true as has_pc_version,
-                   false as has_android_version,
+                   (g.pc_file_data IS NOT NULL) as has_pc_version,
+                   (g.android_file_data IS NOT NULL) as has_android_version,
                    COALESCE(COUNT(ul.id), 0) as user_likes_count
             FROM games g
             LEFT JOIN user_likes ul ON g.id = ul.game_id
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at
+            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_data, g.android_file_data
             ORDER BY g.created_at DESC
         `);
         
@@ -147,12 +147,14 @@ app.get('/api/games/:gameId', async (req, res) => {
             SELECT g.*, 
                    COUNT(DISTINCT c.id) as comment_count,
                    COUNT(DISTINCT ul.id) as actual_likes,
+                   (g.pc_file_data IS NOT NULL) as has_pc_version,
+                   (g.android_file_data IS NOT NULL) as has_android_version,
                    EXISTS(SELECT 1 FROM user_likes WHERE game_id = $1 AND user_ip = $2) as user_liked
             FROM games g
             LEFT JOIN comments c ON g.id = c.game_id
             LEFT JOIN user_likes ul ON g.id = ul.game_id
             WHERE g.id = $1
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at
+            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_data, g.android_file_data
         `, [gameId, userIP]);
         
         if (gameResult.rows.length === 0) {

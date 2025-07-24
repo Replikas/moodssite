@@ -9,9 +9,15 @@ async function initDatabase() {
         await client.connect();
         console.log('Connected to PostgreSQL database');
         
+        // Drop and recreate games table to ensure correct schema
+        await client.query('DROP TABLE IF EXISTS comments CASCADE');
+        await client.query('DROP TABLE IF EXISTS user_likes CASCADE');
+        await client.query('DROP TABLE IF EXISTS screenshots CASCADE');
+        await client.query('DROP TABLE IF EXISTS games CASCADE');
+        
         // Create games table
         await client.query(`
-            CREATE TABLE IF NOT EXISTS games (
+            CREATE TABLE games (
                 id VARCHAR(50) PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT NOT NULL,
@@ -28,7 +34,7 @@ async function initDatabase() {
         
         // Create comments table
         await client.query(`
-            CREATE TABLE IF NOT EXISTS comments (
+            CREATE TABLE comments (
                 id SERIAL PRIMARY KEY,
                 game_id VARCHAR(50) REFERENCES games(id),
                 author VARCHAR(255) NOT NULL,
@@ -39,7 +45,7 @@ async function initDatabase() {
         
         // Create likes table (to track which users liked which games)
         await client.query(`
-            CREATE TABLE IF NOT EXISTS user_likes (
+            CREATE TABLE user_likes (
                 id SERIAL PRIMARY KEY,
                 game_id VARCHAR(50) REFERENCES games(id),
                 user_ip VARCHAR(45) NOT NULL,
@@ -50,7 +56,7 @@ async function initDatabase() {
 
         // Create screenshots table
         await client.query(`
-            CREATE TABLE IF NOT EXISTS screenshots (
+            CREATE TABLE screenshots (
                 id SERIAL PRIMARY KEY,
                 game_id VARCHAR(50) REFERENCES games(id),
                 filename VARCHAR(255) NOT NULL,
