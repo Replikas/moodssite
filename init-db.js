@@ -67,49 +67,22 @@ async function initDatabase() {
                 id: 'find-them-all-rick',
                 title: 'Find Them All Rick!',
                 description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.',
-                icon: 'fas fa-search',
-                likes: 156,
-                downloads: 2800
+                icon: 'fas fa-search'
             }
         ];
         
         for (const game of games) {
             await client.query(`
-                INSERT INTO games (id, title, description, icon, likes, downloads)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO games (id, title, description, icon)
+                VALUES ($1, $2, $3, $4)
                 ON CONFLICT (id) DO UPDATE SET
                     title = EXCLUDED.title,
                     description = EXCLUDED.description,
                     icon = EXCLUDED.icon
-            `, [game.id, game.title, game.description, game.icon, game.likes, game.downloads]);
+            `, [game.id, game.title, game.description, game.icon]);
         }
         
-        // Insert initial comments for Find Them All Rick
-        const comments = [
-            {
-                game_id: 'find-them-all-rick',
-                author: 'MortyCollector',
-                text: 'This game is amazing! Love finding all the different Mortys and the ice cream mini-game is so fun!'
-            },
-            {
-                game_id: 'find-them-all-rick',
-                author: 'RickFan2024',
-                text: 'Great fan-made adventure! The humor is spot on and captures the Rick and Morty vibe perfectly.'
-            },
-            {
-                game_id: 'find-them-all-rick',
-                author: 'DimensionHunter',
-                text: 'Spent hours collecting all the Mortys. The feature-creatures are hilarious! Can\'t wait for more content.'
-            }
-        ];
-        
-        for (const comment of comments) {
-            await client.query(`
-                INSERT INTO comments (game_id, author, text)
-                VALUES ($1, $2, $3)
-                ON CONFLICT DO NOTHING
-            `, [comment.game_id, comment.author, comment.text]);
-        }
+        // No initial comments - they will be added by real users
 
         // Insert initial screenshots for Find Them All Rick
         const screenshots = [
