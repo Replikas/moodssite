@@ -81,10 +81,10 @@ app.post('/api/admin/games', async (req, res) => {
         console.log('Game creation request received');
         console.log('Body:', req.body);
         
-        const { title, description, icon, pcUrl, androidUrl } = req.body;
+        const { title, description, pcUrl, androidUrl } = req.body;
         
-        if (!title || !description || !icon) {
-            return res.status(400).json({ error: 'Title, description, and icon are required' });
+        if (!title || !description) {
+            return res.status(400).json({ error: 'Title and description are required' });
         }
         
         if (!pcUrl && !androidUrl) {
@@ -104,18 +104,17 @@ app.post('/api/admin/games', async (req, res) => {
         
         // Use UPSERT to either insert new game or update existing one
         const result = await client.query(`
-            INSERT INTO games (id, title, description, icon, pc_file_url, pc_file_name, android_file_url, android_file_name, likes, downloads) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0)
+            INSERT INTO games (id, title, description, pc_file_url, pc_file_name, android_file_url, android_file_name, likes, downloads) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 0)
             ON CONFLICT (id) DO UPDATE SET
                 title = EXCLUDED.title,
                 description = EXCLUDED.description,
-                icon = EXCLUDED.icon,
                 pc_file_url = COALESCE(EXCLUDED.pc_file_url, games.pc_file_url),
                 pc_file_name = COALESCE(EXCLUDED.pc_file_name, games.pc_file_name),
                 android_file_url = COALESCE(EXCLUDED.android_file_url, games.android_file_url),
                 android_file_name = COALESCE(EXCLUDED.android_file_name, games.android_file_name)
             RETURNING *
-        `, [gameId, title, description, icon, pcFileUrl, pcFileName, androidFileUrl, androidFileName]);
+        `, [gameId, title, description, pcFileUrl, pcFileName, androidFileUrl, androidFileName]);
         
         res.json(result.rows[0]);
     } catch (error) {
@@ -150,7 +149,7 @@ app.delete('/api/admin/games/:gameId', async (req, res) => {
 app.put('/api/admin/games/:gameId', async (req, res) => {
     try {
         const { gameId } = req.params;
-        const { title, description, icon, pcUrl, androidUrl } = req.body;
+        const { title, description, pcUrl, androidUrl } = req.body;
         
         // Check if game exists
         const existingGame = await client.query(
@@ -164,8 +163,8 @@ app.put('/api/admin/games/:gameId', async (req, res) => {
         
         // Update the game
         const result = await client.query(
-            'UPDATE games SET title = $1, description = $2, icon = $3, pc_file_url = $4, android_file_url = $5 WHERE id = $6 RETURNING *',
-            [title, description, icon, pcUrl, androidUrl, gameId]
+            'UPDATE games SET title = $1, description = $2, pc_file_url = $3, android_file_url = $4 WHERE id = $5 RETURNING *',
+            [title, description, pcUrl, androidUrl, gameId]
         );
         
         res.json({ message: 'Game updated successfully', game: result.rows[0] });
