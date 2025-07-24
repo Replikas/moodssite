@@ -270,17 +270,21 @@
 
                 
                 <div class="form-group">
-                        <label for="pcUrl">PC Download URL (Google Drive, Dropbox, etc.)</label>
-                        <input type="url" id="pcUrl" name="pcUrl" placeholder="https://drive.google.com/file/d/...">
+                        <label for="pcUrl">PC Download URL (Dropbox)</label>
+                        <input type="url" id="pcUrl" name="pcUrl" placeholder="https://www.dropbox.com/s/abc123/game.zip?dl=1">
                     </div>
                     
                     <div class="form-group">
-                        <label for="androidUrl">Android Download URL (Google Drive, Dropbox, etc.)</label>
-                        <input type="url" id="androidUrl" name="androidUrl" placeholder="https://drive.google.com/file/d/...">
+                        <label for="androidUrl">Android Download URL (Dropbox)</label>
+                        <input type="url" id="androidUrl" name="androidUrl" placeholder="https://www.dropbox.com/s/abc123/game.apk?dl=1">
                     </div>
                 
                 <div class="form-group">
                     <small style="color: #666;">Note: At least one platform version is required</small>
+                </div>
+                
+                <div class="form-group">
+                    <small style="color: #1976d2; font-weight: bold;">📋 Dropbox Instructions: Change ?dl=0 to ?dl=1 in your Dropbox share URL for direct downloads</small>
                 </div>
                 
                 <div id="uploadProgress" style="display: none; margin-bottom: 1rem;">
