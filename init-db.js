@@ -16,8 +16,10 @@ async function initDatabase() {
                 title VARCHAR(255) NOT NULL,
                 description TEXT NOT NULL,
                 icon VARCHAR(100) NOT NULL,
-                pc_file_path VARCHAR(500),
-                android_file_path VARCHAR(500),
+                pc_file_data BYTEA,
+                pc_file_name VARCHAR(255),
+                android_file_data BYTEA,
+                android_file_name VARCHAR(255),
                 likes INTEGER DEFAULT 0,
                 downloads INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

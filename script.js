@@ -141,8 +141,8 @@ async function loadGames() {
                 icon: game.icon,
                 likes: game.total_likes,
                 downloads: game.downloads,
-                pc_file_path: game.pc_file_path,
-                android_file_path: game.android_file_path
+                has_pc_version: game.has_pc_version,
+                has_android_version: game.has_android_version
             };
         });
         
@@ -411,13 +411,13 @@ async function openGamePage(gameId) {
                     <p><strong>Status:</strong> ${game.status}</p>
                     <div class="game-actions">
                         <div class="download-buttons">
-                            ${game.pc_file_path ? `
+                            ${game.has_pc_version ? `
                                 <button class="download-btn pc-download" onclick="downloadGame('${gameId}', 'pc')">
                                     <i class="fab fa-windows"></i>
                                     Download for PC
                                 </button>
                             ` : ''}
-                            ${game.android_file_path ? `
+                            ${game.has_android_version ? `
                                 <button class="download-btn android-download" onclick="downloadGame('${gameId}', 'android')">
                                     <i class="fab fa-android"></i>
                                     Download for Android

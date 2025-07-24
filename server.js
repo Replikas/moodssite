@@ -15,24 +15,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadPath = path.join(__dirname, 'games');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename: function (req, file, cb) {
-        // Generate unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
+// Configure multer for file uploads (store in memory)
 const upload = multer({ 
-    storage: storage,
+    storage: multer.memoryStorage(),
     limits: {
         fileSize: 100 * 1024 * 1024 // 100MB limit
     },
@@ -71,14 +56,14 @@ function getClientIP(req) {
 app.get('/api/games', async (req, res) => {
     try {
         const result = await client.query(`
-            SELECT g.*, 
-                   COUNT(DISTINCT c.id) as comment_count,
-                   COUNT(DISTINCT ul.id) as actual_likes
+            SELECT g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at,
+                   CASE WHEN g.pc_file_data IS NOT NULL THEN true ELSE false END as has_pc_version,
+                   CASE WHEN g.android_file_data IS NOT NULL THEN true ELSE false END as has_android_version,
+                   COALESCE(SUM(CASE WHEN ul.liked = true THEN 1 ELSE 0 END), 0) as total_likes
             FROM games g
-            LEFT JOIN comments c ON g.id = c.game_id
             LEFT JOIN user_likes ul ON g.id = ul.game_id
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at
-            ORDER BY g.created_at
+            GROUP BY g.id, g.title, g.description, g.icon, g.pc_file_data, g.android_file_data, g.likes, g.downloads, g.created_at
+            ORDER BY g.created_at DESC
         `);
         
         const games = result.rows.map(game => ({
@@ -97,24 +82,30 @@ app.get('/api/games', async (req, res) => {
 app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { name: 'androidFile', maxCount: 1 }]), async (req, res) => {
     try {
         const { title, description, icon } = req.body;
-        const pcFilePath = req.files && req.files.pcFile ? req.files.pcFile[0].filename : null;
-        const androidFilePath = req.files && req.files.androidFile ? req.files.androidFile[0].filename : null;
+        
+        // Get file data from uploaded files
+        const pcFileData = req.files && req.files.pcFile ? req.files.pcFile[0].buffer : null;
+        const pcFileName = req.files && req.files.pcFile ? req.files.pcFile[0].originalname : null;
+        const androidFileData = req.files && req.files.androidFile ? req.files.androidFile[0].buffer : null;
+        const androidFileName = req.files && req.files.androidFile ? req.files.androidFile[0].originalname : null;
         
         // Generate unique ID for the game
         const gameId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
         
         // Use UPSERT to either insert new game or update existing one
         const result = await client.query(`
-            INSERT INTO games (id, title, description, icon, pc_file_path, android_file_path, likes, downloads) 
-            VALUES ($1, $2, $3, $4, $5, $6, 0, 0)
+            INSERT INTO games (id, title, description, icon, pc_file_data, pc_file_name, android_file_data, android_file_name, likes, downloads) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0)
             ON CONFLICT (id) DO UPDATE SET
                 title = EXCLUDED.title,
                 description = EXCLUDED.description,
                 icon = EXCLUDED.icon,
-                pc_file_path = COALESCE(EXCLUDED.pc_file_path, games.pc_file_path),
-                android_file_path = COALESCE(EXCLUDED.android_file_path, games.android_file_path)
+                pc_file_data = COALESCE(EXCLUDED.pc_file_data, games.pc_file_data),
+                pc_file_name = COALESCE(EXCLUDED.pc_file_name, games.pc_file_name),
+                android_file_data = COALESCE(EXCLUDED.android_file_data, games.android_file_data),
+                android_file_name = COALESCE(EXCLUDED.android_file_name, games.android_file_name)
             RETURNING *
-        `, [gameId, title, description, icon, pcFilePath, androidFilePath]);
+        `, [gameId, title, description, icon, pcFileData, pcFileName, androidFileData, androidFileName]);
         
         res.json(result.rows[0]);
     } catch (error) {
@@ -262,9 +253,9 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
         const platform = req.params.platform; // 'pc' or 'android'
         const userIP = getClientIP(req);
         
-        // Get game info including file paths
+        // Get game info including file data
         const gameResult = await client.query(
-            'SELECT pc_file_path, android_file_path, title FROM games WHERE id = $1',
+            'SELECT pc_file_data, pc_file_name, android_file_data, android_file_name, title FROM games WHERE id = $1',
             [gameId]
         );
         
@@ -273,9 +264,10 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
         }
         
         const game = gameResult.rows[0];
-        const filePath = platform === 'pc' ? game.pc_file_path : game.android_file_path;
+        const fileData = platform === 'pc' ? game.pc_file_data : game.android_file_data;
+        const fileName = platform === 'pc' ? game.pc_file_name : game.android_file_name;
         
-        if (!filePath) {
+        if (!fileData || !fileName) {
             return res.status(404).json({ error: `${platform.toUpperCase()} version not available` });
         }
         
@@ -285,14 +277,12 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
             [gameId]
         );
         
-        // Serve the file
-        const fullFilePath = path.join(__dirname, 'games', filePath);
+        // Set appropriate headers and send file
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Length', fileData.length);
         
-        if (!fs.existsSync(fullFilePath)) {
-            return res.status(404).json({ error: 'Game file not found on server' });
-        }
-        
-        res.download(fullFilePath, `${game.title}-${platform}${path.extname(filePath)}`);
+        res.send(fileData);
     } catch (error) {
         console.error('Error downloading game:', error);
         res.status(500).json({ error: 'Failed to download game' });
