@@ -371,8 +371,17 @@
             e.preventDefault();
             
             const formData = new FormData(e.target);
+            const title = formData.get('title');
+            const description = formData.get('description');
+            const icon = formData.get('icon');
             const pcUrl = formData.get('pcUrl');
             const androidUrl = formData.get('androidUrl');
+            
+            // Validate required fields
+            if (!title || !description || !icon) {
+                showMessage('Please fill in all required fields: Title, Description, and Icon', 'error');
+                return;
+            }
             
             // Validate that at least one URL is provided
             if (!pcUrl && !androidUrl) {
@@ -389,6 +398,15 @@
             progressContainer.style.display = 'block';
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            
+            // Create JSON payload
+            const jsonData = {
+                title,
+                description,
+                icon,
+                pcUrl: pcUrl || null,
+                androidUrl: androidUrl || null
+            };
             
             // Create XMLHttpRequest for progress tracking
             const xhr = new XMLHttpRequest();
@@ -449,7 +467,8 @@
             
             // Send the request
             xhr.open('POST', `${API_BASE}/admin/games`);
-            xhr.send(formData);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(jsonData));
         });
         
         // Delete game
