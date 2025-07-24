@@ -3,6 +3,7 @@ const { Client } = require('pg');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -277,8 +278,24 @@ app.get('/api/games/:gameId/download/:platform', async (req, res) => {
             [gameId]
         );
         
-        // Redirect to Google Drive URL
-        res.redirect(fileUrl);
+        // Stream file directly from Google Drive
+        try {
+            const response = await axios({
+                method: 'GET',
+                url: fileUrl,
+                responseType: 'stream'
+            });
+            
+            // Set appropriate headers for file download
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+            
+            // Pipe the file stream to the response
+            response.data.pipe(res);
+        } catch (streamError) {
+            console.error('Error streaming file:', streamError);
+            res.status(500).json({ error: 'Failed to stream file' });
+        }
     } catch (error) {
         console.error('Error downloading game:', error);
         res.status(500).json({ error: 'Failed to download game' });
@@ -304,8 +321,24 @@ app.get('/api/games/:id/download/android', async (req, res) => {
         
         await client.end();
         
-        // Redirect to Google Drive URL
-        res.redirect(game.android_file_url);
+        // Stream file directly from Google Drive
+        try {
+            const response = await axios({
+                method: 'GET',
+                url: game.android_file_url,
+                responseType: 'stream'
+            });
+            
+            // Set appropriate headers for file download
+            res.setHeader('Content-Disposition', `attachment; filename="${game.android_file_name}"`);
+            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+            
+            // Pipe the file stream to the response
+            response.data.pipe(res);
+        } catch (streamError) {
+            console.error('Error streaming Android file:', streamError);
+            res.status(500).json({ error: 'Failed to stream Android file' });
+        }
     } catch (error) {
         console.error('Error downloading Android file:', error);
         res.status(500).json({ error: 'Failed to download file' });
