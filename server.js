@@ -4,11 +4,38 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
+const admin = require('firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_KUVpudE1k2yR@ep-plain-brook-a82aore9-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
+
+// Initialize Firebase Admin SDK
+const serviceAccount = {
+    type: "service_account",
+    project_id: "moodysgames-storage",
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
+};
+
+try {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: "moodysgames-storage.appspot.com"
+    });
+    console.log('Firebase Admin SDK initialized successfully');
+} catch (error) {
+    console.log('Firebase initialization skipped (missing credentials):', error.message);
+}
+
+const bucket = admin.storage().bucket();
 
 // Middleware
 app.use(cors());
@@ -61,12 +88,12 @@ app.get('/api/games', async (req, res) => {
     try {
         const result = await client.query(`
             SELECT g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at,
-                   (g.pc_file_data IS NOT NULL) as has_pc_version,
-                   (g.android_file_data IS NOT NULL) as has_android_version,
+                   (g.pc_file_url IS NOT NULL) as has_pc_version,
+                   (g.android_file_url IS NOT NULL) as has_android_version,
                    COALESCE(COUNT(ul.id), 0) as user_likes_count
             FROM games g
             LEFT JOIN user_likes ul ON g.id = ul.game_id
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_data, g.android_file_data
+            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
             ORDER BY g.created_at DESC
         `);
         
@@ -95,32 +122,74 @@ app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { n
             return res.status(400).json({ error: 'Title, description, and icon are required' });
         }
         
-        // Get file data from uploaded files
-        const pcFileData = req.files && req.files.pcFile ? req.files.pcFile[0].buffer : null;
-        const pcFileName = req.files && req.files.pcFile ? req.files.pcFile[0].originalname : null;
-        const androidFileData = req.files && req.files.androidFile ? req.files.androidFile[0].buffer : null;
-        const androidFileName = req.files && req.files.androidFile ? req.files.androidFile[0].originalname : null;
-        
-        console.log('PC File:', pcFileName, pcFileData ? `${pcFileData.length} bytes` : 'None');
-        console.log('Android File:', androidFileName, androidFileData ? `${androidFileData.length} bytes` : 'None');
-        
         // Generate unique ID for the game
         const gameId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
         
+        let pcFileUrl = null;
+        let pcFileName = null;
+        let androidFileUrl = null;
+        let androidFileName = null;
+        
+        // Upload PC file to Firebase Storage if provided
+        if (req.files && req.files.pcFile) {
+            const pcFile = req.files.pcFile[0];
+            pcFileName = pcFile.originalname;
+            const pcFileRef = bucket.file(`games/${gameId}/pc/${pcFileName}`);
+            
+            console.log('Uploading PC File:', pcFileName, `${pcFile.buffer.length} bytes`);
+            
+            await pcFileRef.save(pcFile.buffer, {
+                metadata: {
+                    contentType: pcFile.mimetype,
+                    metadata: {
+                        gameId: gameId,
+                        platform: 'pc'
+                    }
+                }
+            });
+            
+            // Make file publicly accessible
+            await pcFileRef.makePublic();
+            pcFileUrl = `https://storage.googleapis.com/moodysgames-storage.appspot.com/games/${gameId}/pc/${encodeURIComponent(pcFileName)}`;
+        }
+        
+        // Upload Android file to Firebase Storage if provided
+        if (req.files && req.files.androidFile) {
+            const androidFile = req.files.androidFile[0];
+            androidFileName = androidFile.originalname;
+            const androidFileRef = bucket.file(`games/${gameId}/android/${androidFileName}`);
+            
+            console.log('Uploading Android File:', androidFileName, `${androidFile.buffer.length} bytes`);
+            
+            await androidFileRef.save(androidFile.buffer, {
+                metadata: {
+                    contentType: androidFile.mimetype,
+                    metadata: {
+                        gameId: gameId,
+                        platform: 'android'
+                    }
+                }
+            });
+            
+            // Make file publicly accessible
+            await androidFileRef.makePublic();
+            androidFileUrl = `https://storage.googleapis.com/moodysgames-storage.appspot.com/games/${gameId}/android/${encodeURIComponent(androidFileName)}`;
+        }
+        
         // Use UPSERT to either insert new game or update existing one
         const result = await client.query(`
-            INSERT INTO games (id, title, description, icon, pc_file_data, pc_file_name, android_file_data, android_file_name, likes, downloads) 
+            INSERT INTO games (id, title, description, icon, pc_file_url, pc_file_name, android_file_url, android_file_name, likes, downloads) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0)
             ON CONFLICT (id) DO UPDATE SET
                 title = EXCLUDED.title,
                 description = EXCLUDED.description,
                 icon = EXCLUDED.icon,
-                pc_file_data = COALESCE(EXCLUDED.pc_file_data, games.pc_file_data),
+                pc_file_url = COALESCE(EXCLUDED.pc_file_url, games.pc_file_url),
                 pc_file_name = COALESCE(EXCLUDED.pc_file_name, games.pc_file_name),
-                android_file_data = COALESCE(EXCLUDED.android_file_data, games.android_file_data),
+                android_file_url = COALESCE(EXCLUDED.android_file_url, games.android_file_url),
                 android_file_name = COALESCE(EXCLUDED.android_file_name, games.android_file_name)
             RETURNING *
-        `, [gameId, title, description, icon, pcFileData, pcFileName, androidFileData, androidFileName]);
+        `, [gameId, title, description, icon, pcFileUrl, pcFileName, androidFileUrl, androidFileName]);
         
         res.json(result.rows[0]);
     } catch (error) {
@@ -162,14 +231,14 @@ app.get('/api/games/:gameId', async (req, res) => {
             SELECT g.*, 
                    COUNT(DISTINCT c.id) as comment_count,
                    COUNT(DISTINCT ul.id) as actual_likes,
-                   (g.pc_file_data IS NOT NULL) as has_pc_version,
-                   (g.android_file_data IS NOT NULL) as has_android_version,
+                   (g.pc_file_url IS NOT NULL) as has_pc_version,
+                   (g.android_file_url IS NOT NULL) as has_android_version,
                    EXISTS(SELECT 1 FROM user_likes WHERE game_id = $1 AND user_ip = $2) as user_liked
             FROM games g
             LEFT JOIN comments c ON g.id = c.game_id
             LEFT JOIN user_likes ul ON g.id = ul.game_id
             WHERE g.id = $1
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_data, g.android_file_data
+            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
         `, [gameId, userIP]);
         
         if (gameResult.rows.length === 0) {
@@ -270,9 +339,9 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
         const platform = req.params.platform; // 'pc' or 'android'
         const userIP = getClientIP(req);
         
-        // Get game info including file data
+        // Get game info including file URLs
         const gameResult = await client.query(
-            'SELECT pc_file_data, pc_file_name, android_file_data, android_file_name, title FROM games WHERE id = $1',
+            'SELECT pc_file_url, pc_file_name, android_file_url, android_file_name, title FROM games WHERE id = $1',
             [gameId]
         );
         
@@ -281,10 +350,10 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
         }
         
         const game = gameResult.rows[0];
-        const fileData = platform === 'pc' ? game.pc_file_data : game.android_file_data;
+        const fileUrl = platform === 'pc' ? game.pc_file_url : game.android_file_url;
         const fileName = platform === 'pc' ? game.pc_file_name : game.android_file_name;
         
-        if (!fileData || !fileName) {
+        if (!fileUrl || !fileName) {
             return res.status(404).json({ error: `${platform.toUpperCase()} version not available` });
         }
         
@@ -294,15 +363,38 @@ app.post('/api/games/:gameId/download/:platform', async (req, res) => {
             [gameId]
         );
         
-        // Set appropriate headers and send file
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        res.setHeader('Content-Type', 'application/octet-stream');
-        res.setHeader('Content-Length', fileData.length);
-        
-        res.send(fileData);
+        // Redirect to Firebase Storage URL
+        res.redirect(fileUrl);
     } catch (error) {
         console.error('Error downloading game:', error);
         res.status(500).json({ error: 'Failed to download game' });
+    }
+});
+
+// Download Android game file
+app.get('/api/games/:id/download/android', async (req, res) => {
+    try {
+        const client = new Client({ connectionString });
+        await client.connect();
+        
+        const result = await client.query('SELECT android_file_url, android_file_name FROM games WHERE id = $1', [req.params.id]);
+        
+        if (result.rows.length === 0 || !result.rows[0].android_file_url) {
+            return res.status(404).json({ error: 'Android file not found' });
+        }
+        
+        const game = result.rows[0];
+        
+        // Update download count
+        await client.query('UPDATE games SET downloads = downloads + 1 WHERE id = $1', [req.params.id]);
+        
+        await client.end();
+        
+        // Redirect to Firebase Storage URL
+        res.redirect(game.android_file_url);
+    } catch (error) {
+        console.error('Error downloading Android file:', error);
+        res.status(500).json({ error: 'Failed to download file' });
     }
 });
 
