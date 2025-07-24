@@ -19,8 +19,8 @@ app.use(express.static('.'));
 const upload = multer({ 
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 100 * 1024 * 1024, // Reduced to 100MB for Render compatibility
-        fieldSize: 100 * 1024 * 1024,
+        fileSize: 500 * 1024 * 1024, // Increased to 500MB for larger game files
+        fieldSize: 500 * 1024 * 1024,
         fields: 10,
         files: 2
     },

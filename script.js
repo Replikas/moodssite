@@ -668,16 +668,16 @@ async function addComment(gameId) {
 
 function renderComments(comments) {
     if (!comments || comments.length === 0) {
-        return '<p class="no-comments">No comments yet. Be the first to share your thoughts!</p>';
+        return '<div class="no-comments"><i class="fas fa-comments"></i><br>No comments yet. Be the first to share your thoughts!</div>';
     }
     
     return comments.map(comment => `
         <div class="comment">
             <div class="comment-header">
-                <strong>${comment.author}</strong>
-                <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
+                <div class="comment-author">${comment.author}</div>
+                <div class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</div>
             </div>
-            <p>${comment.text}</p>
+            <div class="comment-text">${comment.text}</div>
         </div>
     `).join('');
 }

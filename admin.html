@@ -184,11 +184,23 @@
 
         <!-- Admin Panel (hidden by default) -->
         <div id="adminPanel" class="admin-container" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h1 class="admin-title"><i class="fas fa-cog"></i> Admin Panel</h1>
-                <button onclick="logout()" class="upload-btn" style="background: #f44336;">
+            <!-- Navigation Bar -->
+            <div class="admin-nav-bar">
+                <div class="nav-buttons">
+                    <a href="index.html" class="nav-btn primary">
+                        <i class="fas fa-gamepad"></i> Moody's Games
+                    </a>
+                    <a href="index.html" class="nav-btn secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Games
+                    </a>
+                </div>
+                <button onclick="logout()" class="nav-btn logout">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
+            </div>
+            
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 2rem;">
+                <h1 class="admin-title"><i class="fas fa-cog"></i> Admin Panel</h1>
             </div>
             
             <div id="message-container"></div>
