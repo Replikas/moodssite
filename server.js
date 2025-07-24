@@ -103,15 +103,23 @@ app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { n
         // Generate unique ID for the game
         const gameId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
         
-        const result = await client.query(
-            'INSERT INTO games (id, title, description, icon, pc_file_path, android_file_path, likes, downloads) VALUES ($1, $2, $3, $4, $5, $6, 0, 0) RETURNING *',
-            [gameId, title, description, icon, pcFilePath, androidFilePath]
-        );
+        // Use UPSERT to either insert new game or update existing one
+        const result = await client.query(`
+            INSERT INTO games (id, title, description, icon, pc_file_path, android_file_path, likes, downloads) 
+            VALUES ($1, $2, $3, $4, $5, $6, 0, 0)
+            ON CONFLICT (id) DO UPDATE SET
+                title = EXCLUDED.title,
+                description = EXCLUDED.description,
+                icon = EXCLUDED.icon,
+                pc_file_path = COALESCE(EXCLUDED.pc_file_path, games.pc_file_path),
+                android_file_path = COALESCE(EXCLUDED.android_file_path, games.android_file_path)
+            RETURNING *
+        `, [gameId, title, description, icon, pcFilePath, androidFilePath]);
         
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error creating game:', error);
-        res.status(500).json({ error: 'Failed to create game' });
+        console.error('Error creating/updating game:', error);
+        res.status(500).json({ error: 'Failed to create/update game' });
     }
 });
 
