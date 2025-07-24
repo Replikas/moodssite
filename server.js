@@ -1,51 +1,22 @@
 const express = require('express');
 const { Client } = require('pg');
 const cors = require('cors');
-const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const stream = require('stream');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_KUVpudE1k2yR@ep-plain-brook-a82aore9-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
 
-// Initialize Google Drive API
-const { google } = require('googleapis');
-const drive = google.drive({
-  version: 'v3',
-  auth: process.env.GOOGLE_DRIVE_API_KEY
-});
-
-console.log('Google Drive API initialized');
+// No file upload needed - using direct URLs
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
-// Configure multer for file uploads (store in memory)
-const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: {
-        fileSize: 500 * 1024 * 1024, // Increased to 500MB for larger game files
-        fieldSize: 500 * 1024 * 1024,
-        fields: 10,
-        files: 2
-    },
-    fileFilter: function (req, file, cb) {
-        console.log('File upload attempt:', file.originalname, file.mimetype);
-        // Allow common game file formats
-        const allowedTypes = ['.zip', '.rar', '.exe', '.msi', '.dmg', '.pkg', '.deb', '.rpm', '.apk'];
-        const fileExt = path.extname(file.originalname).toLowerCase();
-        if (allowedTypes.includes(fileExt)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type. Only game files are allowed.'));
-        }
-    }
-});
+// No file upload middleware needed
 
 // Database connection
 const client = new Client({ connectionString });
@@ -93,95 +64,31 @@ app.get('/api/games', async (req, res) => {
 });
 
 // Admin Routes
-app.post('/api/admin/games', upload.fields([{ name: 'pcFile', maxCount: 1 }, { name: 'androidFile', maxCount: 1 }]), async (req, res) => {
+app.post('/api/admin/games', async (req, res) => {
     try {
-        console.log('Upload request received');
+        console.log('Game creation request received');
         console.log('Body:', req.body);
-        console.log('Files:', req.files ? Object.keys(req.files) : 'No files');
         
-        const { title, description, icon } = req.body;
+        const { title, description, icon, pcUrl, androidUrl } = req.body;
         
         if (!title || !description || !icon) {
             return res.status(400).json({ error: 'Title, description, and icon are required' });
         }
         
+        if (!pcUrl && !androidUrl) {
+            return res.status(400).json({ error: 'At least one download URL (PC or Android) is required' });
+        }
+        
         // Generate unique ID for the game
         const gameId = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
         
-        let pcFileUrl = null;
-        let pcFileName = null;
-        let androidFileUrl = null;
-        let androidFileName = null;
+        // Use provided URLs directly
+        const pcFileUrl = pcUrl || null;
+        const androidFileUrl = androidUrl || null;
         
-        // Upload PC file to Google Drive if provided
-        if (req.files && req.files.pcFile) {
-            const pcFile = req.files.pcFile[0];
-            pcFileName = pcFile.originalname;
-            
-            console.log('Uploading PC File to Google Drive:', pcFileName, `${pcFile.buffer.length} bytes`);
-            
-            const pcFileMetadata = {
-                name: `${gameId}_pc_${pcFileName}`,
-                parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
-            };
-            
-            const pcMedia = {
-                 mimeType: pcFile.mimetype,
-                 body: stream.Readable.from(pcFile.buffer)
-             };
-            
-            const pcUploadResult = await drive.files.create({
-                resource: pcFileMetadata,
-                media: pcMedia,
-                fields: 'id'
-            });
-            
-            // Make file public
-            await drive.permissions.create({
-                fileId: pcUploadResult.data.id,
-                resource: {
-                    role: 'reader',
-                    type: 'anyone'
-                }
-            });
-            
-            pcFileUrl = `https://www.googleapis.com/drive/v3/files/${pcUploadResult.data.id}?alt=media&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
-        }
-        
-        // Upload Android file to Google Drive if provided
-        if (req.files && req.files.androidFile) {
-            const androidFile = req.files.androidFile[0];
-            androidFileName = androidFile.originalname;
-            
-            console.log('Uploading Android File to Google Drive:', androidFileName, `${androidFile.buffer.length} bytes`);
-            
-            const androidFileMetadata = {
-                name: `${gameId}_android_${androidFileName}`,
-                parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
-            };
-            
-            const androidMedia = {
-                 mimeType: androidFile.mimetype,
-                 body: stream.Readable.from(androidFile.buffer)
-             };
-            
-            const androidUploadResult = await drive.files.create({
-                resource: androidFileMetadata,
-                media: androidMedia,
-                fields: 'id'
-            });
-            
-            // Make file public
-            await drive.permissions.create({
-                fileId: androidUploadResult.data.id,
-                resource: {
-                    role: 'reader',
-                    type: 'anyone'
-                }
-            });
-            
-            androidFileUrl = `https://www.googleapis.com/drive/v3/files/${androidUploadResult.data.id}?alt=media&key=${process.env.GOOGLE_DRIVE_API_KEY}`;
-        }
+        // Extract filename from URL for display purposes
+        const pcFileName = pcUrl ? 'PC Version' : null;
+        const androidFileName = androidUrl ? 'Android Version' : null;
         
         // Use UPSERT to either insert new game or update existing one
         const result = await client.query(`
@@ -573,38 +480,22 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Test upload endpoint
-app.post('/api/test-upload', upload.single('testFile'), (req, res) => {
-    console.log('Test upload received');
-    console.log('Body:', req.body);
-    console.log('File:', req.file ? req.file.originalname : 'No file');
-    res.json({ 
-        success: true, 
-        body: req.body, 
-        file: req.file ? {
-            originalname: req.file.originalname,
-            size: req.file.size,
-            mimetype: req.file.mimetype
-        } : null 
-    });
-});
+// Test upload endpoint removed - no longer needed with URL-based approach
 
-// Multer error handling middleware
+// General error handling middleware
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
-        console.error('Multer error:', err.message);
+        console.error('Screenshot upload error:', err.message);
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File too large. Maximum size is 500MB.' });
+            return res.status(400).json({ error: 'Image too large. Maximum size is 10MB.' });
+        } else {
+            return res.status(400).json({ error: err.message });
         }
-        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-            return res.status(400).json({ error: 'Unexpected file field.' });
-        }
-        return res.status(400).json({ error: err.message });
+    } else {
+        console.error('General error:', err.stack);
+        res.status(500).json({ error: 'Something went wrong!' });
     }
-    
-    console.error('General error:', err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
-});
+}); 
 
 // Start server
 app.listen(PORT, () => {

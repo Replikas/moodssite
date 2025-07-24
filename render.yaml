@@ -16,7 +16,3 @@ services:
           property: port
       - key: DATABASE_URL
         sync: false
-      - key: GOOGLE_DRIVE_API_KEY
-        sync: false
-      - key: GOOGLE_DRIVE_FOLDER_ID
-        sync: false

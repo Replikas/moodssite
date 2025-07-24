@@ -266,14 +266,14 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="pcFile">PC Version (ZIP, RAR, EXE, etc.)</label>
-                    <input type="file" id="pcFile" name="pcFile" accept=".zip,.rar,.exe,.msi,.dmg,.pkg,.deb,.rpm">
-                </div>
-                
-                <div class="form-group">
-                    <label for="androidFile">Android Version (APK)</label>
-                    <input type="file" id="androidFile" name="androidFile" accept=".apk">
-                </div>
+                        <label for="pcUrl">PC Download URL (Google Drive, Dropbox, etc.)</label>
+                        <input type="url" id="pcUrl" name="pcUrl" placeholder="https://drive.google.com/file/d/...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="androidUrl">Android Download URL (Google Drive, Dropbox, etc.)</label>
+                        <input type="url" id="androidUrl" name="androidUrl" placeholder="https://drive.google.com/file/d/...">
+                    </div>
                 
                 <div class="form-group">
                     <small style="color: #666;">Note: At least one platform version is required</small>
@@ -371,12 +371,12 @@
             e.preventDefault();
             
             const formData = new FormData(e.target);
-            const pcFile = formData.get('pcFile');
-            const androidFile = formData.get('androidFile');
+            const pcUrl = formData.get('pcUrl');
+            const androidUrl = formData.get('androidUrl');
             
-            // Validate that at least one file is uploaded
-            if ((!pcFile || pcFile.size === 0) && (!androidFile || androidFile.size === 0)) {
-                showMessage('Please upload at least one platform version (PC or Android)', 'error');
+            // Validate that at least one URL is provided
+            if (!pcUrl && !androidUrl) {
+                showMessage('Please provide at least one download URL (PC or Android)', 'error');
                 return;
             }
             
