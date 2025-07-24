@@ -223,7 +223,17 @@
                     <small style="color: #666;">Note: At least one platform version is required</small>
                 </div>
                 
-                <button type="submit" class="upload-btn">
+                <div id="uploadProgress" style="display: none; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>Uploading...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div style="width: 100%; background-color: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                        <div id="progressBar" style="width: 0%; height: 20px; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="upload-btn" id="uploadBtn">
                     <i class="fas fa-upload"></i> Upload Game
                 </button>
             </form>
@@ -300,8 +310,8 @@
             }
         }
         
-        // Handle form submission
-        document.getElementById('gameUploadForm').addEventListener('submit', async (e) => {
+        // Handle form submission with progress tracking
+        document.getElementById('gameUploadForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
@@ -314,30 +324,76 @@
                 return;
             }
             
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('uploadBtn');
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            
+            // Show progress bar and disable button
+            progressContainer.style.display = 'block';
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             
-            try {
-                const response = await fetch(`${API_BASE}/admin/games`, {
-                    method: 'POST',
-                    body: formData // Send FormData directly for file upload
-                });
-                
-                if (response.ok) {
-                    showMessage('Game uploaded successfully!', 'success');
-                    e.target.reset();
-                    loadGames();
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Upload failed');
+            // Create XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
+            
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressPercent.textContent = percentComplete + '%';
                 }
-            } catch (error) {
-                showMessage(`Failed to upload game: ${error.message}`, 'error');
-            } finally {
+            });
+            
+            // Handle completion
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    // Success - show 100% and success message
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    
+                    setTimeout(() => {
+                        showMessage('🎉 Game uploaded successfully!', 'success');
+                        e.target.reset();
+                        loadGames();
+                        
+                        // Hide progress bar after a delay
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                            progressBar.style.width = '0%';
+                            progressPercent.textContent = '0%';
+                        }, 2000);
+                    }, 500);
+                } else {
+                    // Error
+                    let errorMessage = 'Upload failed';
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        // Use default error message
+                    }
+                    showMessage(`Failed to upload game: ${errorMessage}`, 'error');
+                    progressContainer.style.display = 'none';
+                }
+                
+                // Re-enable button
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Game';
-            }
+            });
+            
+            // Handle errors
+            xhr.addEventListener('error', () => {
+                showMessage('Upload failed: Network error', 'error');
+                progressContainer.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Game';
+            });
+            
+            // Send the request
+            xhr.open('POST', `${API_BASE}/admin/games`);
+            xhr.send(formData);
         });
         
         // Delete game
