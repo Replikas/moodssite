@@ -36,6 +36,21 @@ function getClientIP(req) {
            '127.0.0.1';
 }
 
+// Convert Google Drive sharing URL to direct download URL
+function convertToDirectDownloadUrl(url) {
+    if (!url) return url;
+    
+    // Check if it's a Google Drive sharing URL
+    const driveMatch = url.match(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+        const fileId = driveMatch[1];
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    }
+    
+    // If it's already a direct download URL or different format, return as is
+    return url;
+}
+
 // API Routes
 
 // Get all games with their stats
@@ -278,11 +293,13 @@ app.get('/api/games/:gameId/download/:platform', async (req, res) => {
             [gameId]
         );
         
-        // Stream file directly from Google Drive
+        // Convert to direct download URL and stream file
+        const directDownloadUrl = convertToDirectDownloadUrl(fileUrl);
+        
         try {
             const response = await axios({
                 method: 'GET',
-                url: fileUrl,
+                url: directDownloadUrl,
                 responseType: 'stream'
             });
             
@@ -321,11 +338,13 @@ app.get('/api/games/:id/download/android', async (req, res) => {
         
         await client.end();
         
-        // Stream file directly from Google Drive
+        // Convert to direct download URL and stream file
+        const directDownloadUrl = convertToDirectDownloadUrl(game.android_file_url);
+        
         try {
             const response = await axios({
                 method: 'GET',
-                url: game.android_file_url,
+                url: directDownloadUrl,
                 responseType: 'stream'
             });
             
