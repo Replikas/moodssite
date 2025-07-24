@@ -36,26 +36,15 @@ function getClientIP(req) {
            '127.0.0.1';
 }
 
-// Convert Google Drive sharing URL to direct download URL
-function convertToDirectDownloadUrl(url) {
-    if (!url) return url;
-    
-    // Check if it's a Google Drive sharing URL with /view format
-    const driveViewMatch = url.match(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
-    if (driveViewMatch) {
-        const fileId = driveViewMatch[1];
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+// Helper function to convert share URL to direct download URL
+function convertToDirectDownloadUrl(shareUrl) {
+    // Convert Dropbox share URL to direct download URL
+    if (shareUrl.includes('dropbox.com')) {
+        return shareUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
     }
     
-    // Check if it's a Google Drive sharing URL with /open format
-    const driveOpenMatch = url.match(/https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
-    if (driveOpenMatch) {
-        const fileId = driveOpenMatch[1];
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-    }
-    
-    // If it's already a direct download URL or different format, return as is
-    return url;
+    // For other services, return the URL as-is (assuming it's already a direct download URL)
+    return shareUrl;
 }
 
 // API Routes
@@ -336,55 +325,13 @@ app.get('/api/games/:gameId/download/:platform', async (req, res) => {
             const response = await axios({
                 method: 'GET',
                 url: directDownloadUrl,
-                responseType: 'stream',
-                maxRedirects: 0,
-                validateStatus: function (status) {
-                    return status >= 200 && status < 400; // Accept redirects
-                }
+                responseType: 'stream'
             });
             
-            // Check if we got a Google Drive warning page (HTML content)
-            const contentType = response.headers['content-type'] || '';
-            if (contentType.includes('text/html')) {
-                // This is likely a warning page, we need to extract the real download link
-                let htmlContent = '';
-                response.data.on('data', (chunk) => {
-                    htmlContent += chunk.toString();
-                });
-                
-                response.data.on('end', async () => {
-                    try {
-                        // Extract the download link from the warning page
-                        const confirmMatch = htmlContent.match(/href="\/uc\?export=download&amp;confirm=([^&]+)&amp;id=([^"]+)"/); 
-                        if (confirmMatch) {
-                            const confirmCode = confirmMatch[1];
-                            const fileId = confirmMatch[2];
-                            const actualDownloadUrl = `https://drive.google.com/uc?export=download&confirm=${confirmCode}&id=${fileId}`;
-                            
-                            // Now download the actual file
-                            const actualResponse = await axios({
-                                method: 'GET',
-                                url: actualDownloadUrl,
-                                responseType: 'stream'
-                            });
-                            
-                            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-                            res.setHeader('Content-Type', actualResponse.headers['content-type'] || 'application/octet-stream');
-                            actualResponse.data.pipe(res);
-                        } else {
-                            res.status(500).json({ error: 'Could not extract download link from Google Drive warning page' });
-                        }
-                    } catch (extractError) {
-                        console.error('Error extracting download link:', extractError);
-                        res.status(500).json({ error: 'Failed to process Google Drive warning page' });
-                    }
-                });
-            } else {
-                // Direct file download
-                res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-                res.setHeader('Content-Type', contentType || 'application/octet-stream');
-                response.data.pipe(res);
-            }
+            // Direct file download
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+            response.data.pipe(res);
         } catch (streamError) {
             console.error('Error streaming file:', streamError);
             res.status(500).json({ error: 'Failed to stream file' });
@@ -421,55 +368,13 @@ app.get('/api/games/:id/download/android', async (req, res) => {
             const response = await axios({
                 method: 'GET',
                 url: directDownloadUrl,
-                responseType: 'stream',
-                maxRedirects: 0,
-                validateStatus: function (status) {
-                    return status >= 200 && status < 400; // Accept redirects
-                }
+                responseType: 'stream'
             });
             
-            // Check if we got a Google Drive warning page (HTML content)
-            const contentType = response.headers['content-type'] || '';
-            if (contentType.includes('text/html')) {
-                // This is likely a warning page, we need to extract the real download link
-                let htmlContent = '';
-                response.data.on('data', (chunk) => {
-                    htmlContent += chunk.toString();
-                });
-                
-                response.data.on('end', async () => {
-                    try {
-                        // Extract the download link from the warning page
-                        const confirmMatch = htmlContent.match(/href="\/uc\?export=download&amp;confirm=([^&]+)&amp;id=([^"]+)"/); 
-                        if (confirmMatch) {
-                            const confirmCode = confirmMatch[1];
-                            const fileId = confirmMatch[2];
-                            const actualDownloadUrl = `https://drive.google.com/uc?export=download&confirm=${confirmCode}&id=${fileId}`;
-                            
-                            // Now download the actual file
-                            const actualResponse = await axios({
-                                method: 'GET',
-                                url: actualDownloadUrl,
-                                responseType: 'stream'
-                            });
-                            
-                            res.setHeader('Content-Disposition', `attachment; filename="${game.android_file_name}"`);
-                            res.setHeader('Content-Type', actualResponse.headers['content-type'] || 'application/octet-stream');
-                            actualResponse.data.pipe(res);
-                        } else {
-                            res.status(500).json({ error: 'Could not extract download link from Google Drive warning page' });
-                        }
-                    } catch (extractError) {
-                        console.error('Error extracting download link:', extractError);
-                        res.status(500).json({ error: 'Failed to process Google Drive warning page' });
-                    }
-                });
-            } else {
-                // Direct file download
-                res.setHeader('Content-Disposition', `attachment; filename="${game.android_file_name}"`);
-                res.setHeader('Content-Type', contentType || 'application/octet-stream');
-                response.data.pipe(res);
-            }
+            // Direct file download
+            res.setHeader('Content-Disposition', `attachment; filename="${game.android_file_name}"`);
+            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+            response.data.pipe(res);
         } catch (streamError) {
             console.error('Error streaming Android file:', streamError);
             res.status(500).json({ error: 'Failed to stream Android file' });
