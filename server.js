@@ -247,7 +247,7 @@ app.post('/api/games/:gameId/comments', async (req, res) => {
 });
 
 // Download game file
-app.post('/api/games/:gameId/download/:platform', async (req, res) => {
+app.get('/api/games/:gameId/download/:platform', async (req, res) => {
     try {
         const gameId = req.params.gameId;
         const platform = req.params.platform; // 'pc' or 'android'
@@ -505,7 +505,7 @@ app.listen(PORT, () => {
     console.log('  GET  /api/games/:gameId');
     console.log('  POST /api/games/:gameId/like');
     console.log('  POST /api/games/:gameId/comments');
-    console.log('  POST /api/games/:gameId/download');
+    console.log('  GET  /api/games/:gameId/download/:platform');
     console.log('  POST /api/admin/games (upload)');
     console.log('Environment:', process.env.NODE_ENV || 'development');
 });
