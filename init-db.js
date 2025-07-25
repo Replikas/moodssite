@@ -70,7 +70,7 @@ async function initDatabase() {
         const games = [
             {
                 id: 'find-them-all-rick',
-                title: 'Find Them All Rick!',
+                title: 'Find Them All, Rick!',
                 description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.'
             }
         ];

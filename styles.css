@@ -1182,46 +1182,7 @@ body {
 
 /* Responsive Design */
 /* Games Navigation */
-.games-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    background: rgba(26, 40, 56, 0.9);
-    color: #66c0f4;
-    border: 2px solid #66c0f4;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-}
-
-.games-nav:hover {
-    background: rgba(102, 192, 244, 0.2);
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 0 20px rgba(102, 192, 244, 0.5);
-}
-
-.games-nav:active,
-.games-nav:focus {
-    background: rgba(102, 192, 244, 0.3);
-    transform: translateY(-50%) scale(0.95);
-    outline: none;
-}
-
-.games-nav.prev {
-    left: 20px;
-}
-
-.games-nav.next {
-    right: 20px;
-}
+/* Removed games-nav styles - navigation arrows no longer needed */
 
 .games-indicators {
     display: flex;
@@ -1336,20 +1297,7 @@ body {
         height: 250px;
     }
     
-    .games-nav {
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-        border-width: 1px;
-    }
-    
-    .games-nav.prev {
-        left: 10px;
-    }
-    
-    .games-nav.next {
-        right: 10px;
-    }
+    /* Removed mobile games-nav styles - navigation arrows no longer needed */
     
     .game-detail {
         grid-template-columns: 1fr;

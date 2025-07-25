@@ -3,6 +3,7 @@ let games = {};
 let currentGameIndex = 0;
 let gameIds = [];
 let modalSlideTimer = null;
+let gameCarouselTimer = null;
 
 // API base URL
 const API_BASE = '/api';
@@ -53,8 +54,10 @@ function currentSlide(dot, slideIndex) {
 
 // Game carousel navigation functions
 function changeGameSlide(direction) {
+    console.log('changeGameSlide called with direction:', direction, 'gameIds.length:', gameIds.length);
     if (gameIds.length === 0) return;
     
+    const oldIndex = currentGameIndex;
     currentGameIndex += direction;
     
     if (currentGameIndex >= gameIds.length) {
@@ -63,12 +66,15 @@ function changeGameSlide(direction) {
         currentGameIndex = gameIds.length - 1;
     }
     
+    console.log('Game slide changed from', oldIndex, 'to', currentGameIndex);
     showGameSlide(currentGameIndex);
 }
 
 function currentGameSlide(index) {
     currentGameIndex = index;
     showGameSlide(currentGameIndex);
+    // Restart auto-slide after manual interaction
+    startGameCarouselAutoSlide();
 }
 
 function showGameSlide(index) {
@@ -261,6 +267,8 @@ async function renderGameCards() {
     // Add has-games class if there are games
     if (gameIds.length > 0) {
         gamesGrid.classList.add('has-games');
+        // Start auto-slide for game carousel
+        startGameCarouselAutoSlide();
     } else {
         gamesGrid.classList.remove('has-games');
     }
@@ -480,6 +488,28 @@ function stopModalAutoSlide() {
     if (modalSlideTimer) {
         clearInterval(modalSlideTimer);
         modalSlideTimer = null;
+    }
+}
+
+// Auto-slide functions for game carousel
+function startGameCarouselAutoSlide() {
+    console.log('Starting game carousel auto-slide, gameIds.length:', gameIds.length);
+    stopGameCarouselAutoSlide(); // Clear any existing timer
+    if (gameIds.length > 1) {
+        console.log('Setting up auto-slide timer');
+        gameCarouselTimer = setInterval(() => {
+            console.log('Auto-slide triggered, current index:', currentGameIndex);
+            changeGameSlide(1);
+        }, 5000); // Change slide every 5 seconds
+    } else {
+        console.log('Not enough games for auto-slide');
+    }
+}
+
+function stopGameCarouselAutoSlide() {
+    if (gameCarouselTimer) {
+        clearInterval(gameCarouselTimer);
+        gameCarouselTimer = null;
     }
 }
 
