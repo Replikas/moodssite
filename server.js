@@ -36,16 +36,7 @@ function getClientIP(req) {
            '127.0.0.1';
 }
 
-// Helper function to convert share URL to direct download URL
-function convertToDirectDownloadUrl(shareUrl) {
-    // Convert Dropbox share URL to direct download URL
-    if (shareUrl.includes('dropbox.com')) {
-        return shareUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
-    }
-    
-    // For other services, return the URL as-is (assuming it's already a direct download URL)
-    return shareUrl;
-}
+// Removed convertToDirectDownloadUrl function - no longer using workarounds
 
 // API Routes
 
@@ -287,100 +278,22 @@ app.post('/api/games/:gameId/comments', async (req, res) => {
 });
 
 // Download game file
-app.get('/api/games/:gameId/download/:platform', async (req, res) => {
+// Removed old download endpoint - now using direct URL redirects
+
+// Removed old Android download endpoint - now using direct URL redirects
+
+// Increment download count
+app.post('/api/games/:gameId/increment-download', async (req, res) => {
     try {
-        const gameId = req.params.gameId;
-        const platform = req.params.platform; // 'pc' or 'android'
-        const userIP = getClientIP(req);
-        
-        // Get game info including file URLs
-        const gameResult = await client.query(
-            'SELECT pc_file_url, pc_file_name, android_file_url, android_file_name, title FROM games WHERE id = $1',
-            [gameId]
-        );
-        
-        if (gameResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Game not found' });
-        }
-        
-        const game = gameResult.rows[0];
-        const fileUrl = platform === 'pc' ? game.pc_file_url : game.android_file_url;
-        const fileName = platform === 'pc' ? game.pc_file_name : game.android_file_name;
-        
-        if (!fileUrl || !fileName) {
-            return res.status(404).json({ error: `${platform.toUpperCase()} version not available` });
-        }
-        
-        // Increment download count
+        const { gameId } = req.params;
         await client.query(
             'UPDATE games SET downloads = downloads + 1 WHERE id = $1',
             [gameId]
         );
-        
-        // Convert to direct download URL and handle Google Drive warning page
-        const directDownloadUrl = convertToDirectDownloadUrl(fileUrl);
-        
-        try {
-            const response = await axios({
-                method: 'GET',
-                url: directDownloadUrl,
-                responseType: 'stream'
-            });
-            
-            // Direct file download
-            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
-            response.data.pipe(res);
-        } catch (streamError) {
-            console.error('Error streaming file:', streamError);
-            res.status(500).json({ error: 'Failed to stream file' });
-        }
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error downloading game:', error);
-        res.status(500).json({ error: 'Failed to download game' });
-    }
-});
-
-// Download Android game file
-app.get('/api/games/:id/download/android', async (req, res) => {
-    try {
-        const client = new Client({ connectionString });
-        await client.connect();
-        
-        const result = await client.query('SELECT android_file_url, android_file_name FROM games WHERE id = $1', [req.params.id]);
-        
-        if (result.rows.length === 0 || !result.rows[0].android_file_url) {
-            return res.status(404).json({ error: 'Android file not found' });
-        }
-        
-        const game = result.rows[0];
-        
-        // Update download count
-        await client.query('UPDATE games SET downloads = downloads + 1 WHERE id = $1', [req.params.id]);
-        
-        await client.end();
-        
-        // Convert to direct download URL and handle Google Drive warning page
-        const directDownloadUrl = convertToDirectDownloadUrl(game.android_file_url);
-        
-        try {
-            const response = await axios({
-                method: 'GET',
-                url: directDownloadUrl,
-                responseType: 'stream'
-            });
-            
-            // Direct file download
-            res.setHeader('Content-Disposition', `attachment; filename="${game.android_file_name}"`);
-            res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
-            response.data.pipe(res);
-        } catch (streamError) {
-            console.error('Error streaming Android file:', streamError);
-            res.status(500).json({ error: 'Failed to stream Android file' });
-        }
-    } catch (error) {
-        console.error('Error downloading Android file:', error);
-        res.status(500).json({ error: 'Failed to download file' });
+        console.error('Error incrementing download count:', error);
+        res.status(500).json({ error: 'Failed to increment download count' });
     }
 });
 

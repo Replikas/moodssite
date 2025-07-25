@@ -570,39 +570,27 @@ async function toggleLike(gameId) {
 // Download functionality
 async function downloadGame(gameId, platform) {
     try {
-        const downloadBtn = document.querySelector(`.${platform}-download`);
-        const originalText = downloadBtn.innerHTML;
+        // Get the direct download URL from the game data
+        const gameResponse = await fetch(`${API_BASE}/games/${gameId}`);
+        const game = await gameResponse.json();
         
-        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing Download...';
-        downloadBtn.disabled = true;
+        const downloadUrl = platform === 'pc' ? game.pc_file_url : game.android_file_url;
         
-        // Create a temporary link to trigger the download
-        const downloadLink = document.createElement('a');
-        downloadLink.href = `${API_BASE}/games/${gameId}/download/${platform}`;
-        downloadLink.style.display = 'none';
-        document.body.appendChild(downloadLink);
+        if (!downloadUrl) {
+            alert(`${platform.toUpperCase()} version not available`);
+            return;
+        }
         
-        // Trigger the download
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        // Increment download count
+        await fetch(`${API_BASE}/games/${gameId}/increment-download`, {
+            method: 'POST'
+        });
         
-        // Show success message
-        setTimeout(() => {
-            downloadBtn.innerHTML = '<i class="fas fa-check"></i> Download Started!';
-            
-            setTimeout(() => {
-                downloadBtn.innerHTML = originalText;
-                downloadBtn.disabled = false;
-            }, 2000);
-        }, 500);
+        // Direct redirect to the download URL
+        window.open(downloadUrl, '_blank');
         
     } catch (error) {
         console.error('Error downloading game:', error);
-        const downloadBtn = document.querySelector(`.${platform}-download`);
-        if (downloadBtn) {
-            downloadBtn.innerHTML = platform === 'pc' ? '<i class="fab fa-windows"></i> Download for PC' : '<i class="fab fa-android"></i> Download for Android';
-            downloadBtn.disabled = false;
-        }
         alert('Failed to start download. Please try again.');
     }
 }
@@ -742,3 +730,9 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+
+// Mobile menu toggle function
+function toggleMobileMenu() {
+    const navLinks = document.getElementById('navLinks');
+    navLinks.classList.toggle('active');
+}
