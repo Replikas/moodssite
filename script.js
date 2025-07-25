@@ -138,7 +138,6 @@ async function loadGames() {
             games[game.id] = {
                 title: game.title,
                 description: game.description,
-                icon: game.icon,
                 likes: game.total_likes,
                 downloads: game.downloads,
                 has_pc_version: game.has_pc_version,

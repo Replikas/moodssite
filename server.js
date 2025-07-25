@@ -53,13 +53,13 @@ function convertToDirectDownloadUrl(shareUrl) {
 app.get('/api/games', async (req, res) => {
     try {
         const result = await client.query(`
-            SELECT g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at,
+            SELECT g.id, g.title, g.description, g.likes, g.downloads, g.created_at,
                    (g.pc_file_url IS NOT NULL) as has_pc_version,
                    (g.android_file_url IS NOT NULL) as has_android_version,
                    COALESCE(COUNT(ul.id), 0) as user_likes_count
             FROM games g
             LEFT JOIN user_likes ul ON g.id = ul.game_id
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
+            GROUP BY g.id, g.title, g.description, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
             ORDER BY g.created_at DESC
         `);
         
