@@ -21,11 +21,10 @@ async function initDatabase() {
                 id VARCHAR(50) PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 description TEXT NOT NULL,
-                icon VARCHAR(100) NOT NULL,
                 pc_file_url TEXT,
-    pc_file_name VARCHAR(255),
-    android_file_url TEXT,
-    android_file_name VARCHAR(255),
+                pc_file_name VARCHAR(255),
+                android_file_url TEXT,
+                android_file_name VARCHAR(255),
                 likes INTEGER DEFAULT 0,
                 downloads INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -72,20 +71,18 @@ async function initDatabase() {
             {
                 id: 'find-them-all-rick',
                 title: 'Find Them All Rick!',
-                description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.',
-                icon: 'fas fa-search'
+                description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.'
             }
         ];
         
         for (const game of games) {
             await client.query(`
-                INSERT INTO games (id, title, description, icon)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO games (id, title, description)
+                VALUES ($1, $2, $3)
                 ON CONFLICT (id) DO UPDATE SET
                     title = EXCLUDED.title,
-                    description = EXCLUDED.description,
-                    icon = EXCLUDED.icon
-            `, [game.id, game.title, game.description, game.icon]);
+                    description = EXCLUDED.description
+            `, [game.id, game.title, game.description]);
         }
         
         // No initial comments - they will be added by real users
