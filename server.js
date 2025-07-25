@@ -192,7 +192,7 @@ app.get('/api/games/:gameId', async (req, res) => {
             LEFT JOIN comments c ON g.id = c.game_id
             LEFT JOIN user_likes ul ON g.id = ul.game_id
             WHERE g.id = $1
-            GROUP BY g.id, g.title, g.description, g.icon, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
+            GROUP BY g.id, g.title, g.description, g.likes, g.downloads, g.created_at, g.pc_file_url, g.android_file_url
         `, [gameId, userIP]);
         
         if (gameResult.rows.length === 0) {
