@@ -407,7 +407,7 @@ async function openGamePage(gameId) {
                     <p><strong>Genre:</strong> ${game.genre || 'Adventure, Role Playing'}</p>
                     <p><strong>Tags:</strong> ${game.tags || '2D, Adult, Exploration, Fangame, Multiple Endings, Pixel Art, RPG Maker, Short, Singleplayer'}</p>
                     <p><strong>Platforms:</strong> ${game.platforms || 'Windows, Android'}</p>
-                    <p><strong>Status:</strong> ${game.status}</p>
+                    <p><strong>Status:</strong> ${game.status || 'Published'}</p>
                     <div class="game-actions">
                         <div class="download-buttons">
                             ${game.has_pc_version ? `
