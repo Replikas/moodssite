@@ -403,10 +403,6 @@ async function openGamePage(gameId) {
                 <div class="game-detail-image">
                     <div class="modal-screenshot-slider">
                         ${screenshotSlides}
-                        <div class="modal-slider-nav">
-                            <button class="modal-slider-btn prev" onclick="changeModalSlide(-1)">‹</button>
-                            <button class="modal-slider-btn next" onclick="changeModalSlide(1)">›</button>
-                        </div>
                         <div class="modal-slider-dots">
                             ${screenshotDots}
                         </div>
