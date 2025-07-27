@@ -50,6 +50,12 @@ function currentSlide(dot, slideIndex) {
     
     screenshots[slideIndex - 1].classList.add('active');
     dots[slideIndex - 1].classList.add('active');
+    
+    // Restart auto-slide after manual interaction
+    const gameId = slider.getAttribute('data-game-id');
+    if (gameId && screenshots.length > 1) {
+        startScreenshotAutoSlide(gameId);
+    }
 }
 
 // Game carousel navigation functions
@@ -172,6 +178,9 @@ async function renderGameCards() {
         return;
     }
     
+    // Stop all existing screenshot auto-slides
+    stopAllScreenshotAutoSlides();
+    
     // Clear existing game cards but keep coming soon card
     const existingCards = gamesGrid.querySelectorAll('.game-card:not(.coming-soon)');
     existingCards.forEach(card => card.remove());
@@ -223,12 +232,8 @@ async function renderGameCards() {
             
             gameCard.innerHTML = `
                 <div class="game-image">
-                    <div class="screenshot-slider">
+                    <div class="screenshot-slider" data-game-id="${gameId}">
                         ${screenshotSlides}
-                        <div class="slider-nav">
-                            <button class="slider-btn prev" onclick="event.stopPropagation(); changeSlide(this, -1)">‹</button>
-                            <button class="slider-btn next" onclick="event.stopPropagation(); changeSlide(this, 1)">›</button>
-                        </div>
                         <div class="slider-dots">
                             ${screenshotDots}
                         </div>
@@ -248,13 +253,18 @@ async function renderGameCards() {
             `;
             
             // Insert before coming soon card
-            gamesGrid.insertBefore(gameCard, comingSoonCard);
-            
-            // Create indicator
-            const indicator = document.createElement('div');
-            indicator.className = i === 0 ? 'game-indicator active' : 'game-indicator';
-            indicator.setAttribute('onclick', `currentGameSlide(${i})`);
-            gameIndicators.appendChild(indicator);
+        gamesGrid.insertBefore(gameCard, comingSoonCard);
+        
+        // Start auto-slide for screenshots if there are multiple
+        if (screenshots && screenshots.length > 1) {
+            startScreenshotAutoSlide(gameId);
+        }
+        
+        // Create indicator
+        const indicator = document.createElement('div');
+        indicator.className = i === 0 ? 'game-indicator active' : 'game-indicator';
+        indicator.setAttribute('onclick', `currentGameSlide(${i})`);
+        gameIndicators.appendChild(indicator);
             
         } catch (error) {
             console.error(`Error loading screenshots for game ${gameId}:`, error);
@@ -514,6 +524,42 @@ function stopGameCarouselAutoSlide() {
         clearInterval(gameCarouselTimer);
         gameCarouselTimer = null;
     }
+}
+
+// Screenshot auto-slide functions
+let screenshotTimers = {};
+
+function startScreenshotAutoSlide(gameId) {
+    stopScreenshotAutoSlide(gameId); // Clear any existing timer
+    screenshotTimers[gameId] = setInterval(() => {
+        const slider = document.querySelector(`[data-game-id="${gameId}"] .screenshot-slider`);
+        if (slider) {
+            const screenshots = slider.querySelectorAll('.screenshot');
+            const dots = slider.querySelectorAll('.dot');
+            let currentIndex = Array.from(screenshots).findIndex(s => s.classList.contains('active'));
+            
+            screenshots[currentIndex].classList.remove('active');
+            dots[currentIndex].classList.remove('active');
+            
+            currentIndex = (currentIndex + 1) % screenshots.length;
+            
+            screenshots[currentIndex].classList.add('active');
+            dots[currentIndex].classList.add('active');
+        }
+    }, 3000); // Change slide every 3 seconds
+}
+
+function stopScreenshotAutoSlide(gameId) {
+    if (screenshotTimers[gameId]) {
+        clearInterval(screenshotTimers[gameId]);
+        delete screenshotTimers[gameId];
+    }
+}
+
+function stopAllScreenshotAutoSlides() {
+    Object.keys(screenshotTimers).forEach(gameId => {
+        stopScreenshotAutoSlide(gameId);
+    });
 }
 
 function openImageOverlay(imageSrc, imageAlt) {

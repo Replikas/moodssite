@@ -656,57 +656,7 @@ body {
     object-fit: cover;
 }
 
-.slider-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: calc(100% - 80px);
-    left: 40px;
-    right: 40px;
-    display: flex;
-    justify-content: space-between;
-    padding: 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 5;
-}
-
-.game-card:hover .slider-nav {
-    opacity: 1;
-}
-
-.slider-btn {
-    background: rgba(0, 0, 0, 0.8);
-    color: #66c0f4;
-    border: 2px solid rgba(102, 192, 244, 0.3);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    margin: 0 5px;
-    flex-shrink: 0;
-}
-
-.slider-btn:hover {
-    background: rgba(102, 192, 244, 0.9);
-    color: #ffffff;
-    border-color: #66c0f4;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(102, 192, 244, 0.4);
-}
-
-/* Always show navigation on touch devices */
-@media (hover: none) {
-    .slider-nav {
-        opacity: 1;
-    }
-}
+/* Slider navigation removed - auto-slide only */
 
 /* Rick and Morty Mobile Responsiveness */
 @media (max-width: 768px) {
