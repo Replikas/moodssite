@@ -72,10 +72,10 @@ async function initDatabase() {
                 id: 'find-them-all-rick',
                 title: 'Find Them All, Rick!',
                 description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.',
-                pc_file_url: 'https://example.com/downloads/find-them-all-rick-pc.zip',
-                pc_file_name: 'find-them-all-rick-pc.zip',
-                android_file_url: 'https://example.com/downloads/find-them-all-rick-android.apk',
-                android_file_name: 'find-them-all-rick-android.apk'
+                pc_file_url: 'https://www.dropbox.com/scl/fi/bwuhvu8aq1ibzd7d1yxwe/FTAR_270625_Windows.zip?rlkey=7srqn1y2e8bouhd4ejpe6eoh2&st=0j73gemm&dl=1',
+                pc_file_name: 'FTAR_270625_Windows.zip',
+                android_file_url: 'https://www.dropbox.com/scl/fi/6lq8irplofnnna9xo9yzv/app-debug.apk?rlkey=7xasc33vyfxncj9z5oz7m0qyb&st=0kewd75h&dl=1',
+                android_file_name: 'app-debug.apk'
             }
         ];
         
