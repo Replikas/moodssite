@@ -71,18 +71,26 @@ async function initDatabase() {
             {
                 id: 'find-them-all-rick',
                 title: 'Find Them All, Rick!',
-                description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.'
+                description: 'Gather some Mortys you might or might not see in the official creations, shoot a few feature-creatures and have some ice cream! An unofficial fan-made adventure.',
+                pc_file_url: 'https://example.com/downloads/find-them-all-rick-pc.zip',
+                pc_file_name: 'find-them-all-rick-pc.zip',
+                android_file_url: 'https://example.com/downloads/find-them-all-rick-android.apk',
+                android_file_name: 'find-them-all-rick-android.apk'
             }
         ];
         
         for (const game of games) {
             await client.query(`
-                INSERT INTO games (id, title, description)
-                VALUES ($1, $2, $3)
+                INSERT INTO games (id, title, description, pc_file_url, pc_file_name, android_file_url, android_file_name)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (id) DO UPDATE SET
                     title = EXCLUDED.title,
-                    description = EXCLUDED.description
-            `, [game.id, game.title, game.description]);
+                    description = EXCLUDED.description,
+                    pc_file_url = EXCLUDED.pc_file_url,
+                    pc_file_name = EXCLUDED.pc_file_name,
+                    android_file_url = EXCLUDED.android_file_url,
+                    android_file_name = EXCLUDED.android_file_name
+            `, [game.id, game.title, game.description, game.pc_file_url, game.pc_file_name, game.android_file_url, game.android_file_name]);
         }
         
         // No initial comments - they will be added by real users
