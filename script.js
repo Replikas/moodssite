@@ -401,17 +401,17 @@ async function openGamePage(gameId) {
                             ${screenshotDots}
                         </div>
                     </div>
-                    
-                    <div class="game-video-section">
-                        <h3>Game Guides</h3>
-                        <div class="video-wrapper">
-                            <iframe src="https://www.youtube.com/embed/6fLOIskT93E" title="Find them all, Rick! | Game guides 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
+                </div>
+                
+                <div class="game-video-section-prominent">
+                    <h3>Game Guides</h3>
+                    <div class="video-wrapper-prominent">
+                        <iframe src="https://www.youtube.com/embed/6fLOIskT93E" title="Find them all, Rick! | Game guides 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                     </div>
                 </div>
+                
                 <div class="game-detail-info">
                     <h2>${game.title}</h2>
-                    <p class="game-detail-description">${game.description}</p>
                     <p><strong>Genre:</strong> ${game.genre || 'Adventure, Role Playing'}</p>
                     <p><strong>Tags:</strong> ${game.tags || '2D, Adult, Exploration, Fangame, Multiple Endings, Pixel Art, RPG Maker, Short, Singleplayer'}</p>
                     <p><strong>Platforms:</strong> ${game.platforms || 'Windows, Android'}</p>
