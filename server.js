@@ -1,12 +1,13 @@
 const express = require('express');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_KUVpudE1k2yR@ep-plain-brook-a82aore9-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require';
 
@@ -19,13 +20,32 @@ app.use(express.static('.'));
 
 // No file upload middleware needed
 
-// Database connection
-const client = new Client({ connectionString });
-client.connect().then(() => {
+// Database connection pool with proper error handling
+const pool = new Pool({
+    connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+});
+
+// Handle pool errors
+pool.on('error', (err, client) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
+});
+
+// Test initial connection
+pool.connect().then(client => {
     console.log('Connected to PostgreSQL database');
+    client.release();
 }).catch(err => {
     console.error('Database connection error:', err);
+    process.exit(-1);
 });
+
+// Replace client with pool for all database operations
+const client = pool;
 
 // Helper function to get client IP
 function getClientIP(req) {
@@ -483,7 +503,7 @@ app.use((err, req, res, next) => {
 }); 
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log('API endpoints available:');
     console.log('  GET  /api/games');
@@ -493,4 +513,27 @@ app.listen(PORT, () => {
     console.log('  GET  /api/games/:gameId/download/:platform');
     console.log('  POST /api/admin/games (upload)');
     console.log('Environment:', process.env.NODE_ENV || 'development');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('HTTP server closed');
+        pool.end(() => {
+            console.log('Database pool closed');
+            process.exit(0);
+        });
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('HTTP server closed');
+        pool.end(() => {
+            console.log('Database pool closed');
+            process.exit(0);
+        });
+    });
 });
