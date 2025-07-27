@@ -633,49 +633,45 @@ body {
     overflow: hidden;
 }
 
-/* Screenshot Slider Styles */
-.screenshot-slider {
+/* Screenshot Carousel Styles - Homepage Only */
+.screenshot-carousel {
     position: relative;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
 }
 
-.screenshot {
-    position: absolute;
-    top: 0;
-    left: 0;
+.carousel-container {
     width: 100%;
     height: 100%;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    overflow: hidden;
 }
 
-.screenshot.active {
-    opacity: 1;
-    animation: slideInHomepage 0.4s ease;
+.carousel-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-@keyframes slideInHomepage {
-    from { 
-        opacity: 0; 
-        transform: translateX(30px) scale(0.95);
-        filter: blur(2px);
-    }
-    to { 
-        opacity: 1; 
-        transform: translateX(0) scale(1);
-        filter: blur(0);
-    }
+.carousel-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.screenshot img {
+.carousel-slide img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: all 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.screenshot img:hover {
+.carousel-slide img:hover {
     transform: scale(1.05);
     filter: brightness(1.1) contrast(1.1);
 }
@@ -756,7 +752,8 @@ body {
     }
 }
 
-.slider-dots {
+/* Carousel dots navigation */
+.carousel-dots {
     position: absolute;
     bottom: 10px;
     left: 50%;
@@ -765,16 +762,16 @@ body {
     gap: 8px;
 }
 
-.dot {
+.carousel-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.5);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.dot.active {
+.carousel-dot.active {
     background-color: #66c0f4;
     transform: scale(1.2);
 }

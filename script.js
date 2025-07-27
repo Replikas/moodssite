@@ -40,22 +40,9 @@ function changeSlide(button, direction) {
     dots[currentIndex].classList.add('active');
 }
 
+// Legacy function - now handled by goToSlide
 function currentSlide(dot, slideIndex) {
-    const slider = dot.closest('.screenshot-slider');
-    const screenshots = slider.querySelectorAll('.screenshot');
-    const dots = slider.querySelectorAll('.dot');
-    
-    screenshots.forEach(s => s.classList.remove('active'));
-    dots.forEach(d => d.classList.remove('active'));
-    
-    screenshots[slideIndex - 1].classList.add('active');
-    dots[slideIndex - 1].classList.add('active');
-    
-    // Restart auto-slide after manual interaction
-    const gameId = slider.getAttribute('data-game-id');
-    if (gameId && screenshots.length > 1) {
-        startScreenshotAutoSlide(gameId);
-    }
+    // This function is deprecated - carousel now uses goToSlide
 }
 
 // Game carousel navigation functions
@@ -201,28 +188,35 @@ async function renderGameCards() {
             const screenshotsResponse = await fetch(`${API_BASE}/games/${gameId}/screenshots`);
             const screenshots = await screenshotsResponse.json();
             
-            // Generate screenshot slides for the card
+            // Generate screenshot slides for the card using carousel images
             let screenshotSlides = '';
             let screenshotDots = '';
             
-            if (screenshots && screenshots.length > 0) {
-                screenshots.slice(0, 3).forEach((screenshot, index) => {
-                    const isActive = index === 0 ? 'active' : '';
-                    screenshotSlides += `
-                        <div class="screenshot ${isActive}">
-                            <img src="images/${screenshot.filename}" alt="${screenshot.alt_text}">
-                        </div>`;
-                    screenshotDots += `
-                        <span class="dot ${isActive}" onclick="event.stopPropagation(); currentSlide(this, ${index + 1})"></span>`;
-                });
-            } else {
-                // Fallback if no screenshots
-                screenshotSlides = `
-                    <div class="screenshot active">
-                        <div class="no-screenshots">No image available</div>
+            // Use carousel-specific images with actual filenames
+            const carouselImages = [
+                '2025-02-27_14-35-15 (1).png',
+                '2025-05-21_20-09-35 (1).png',
+                '2025-05-21_20-10-05 (1).png',
+                '2025-05-21_20-10-33.png',
+                '2025-05-21_20-12-49 (1).png',
+                '2025-05-21_20-13-31.png',
+                '2025-05-21_20-14-20.png',
+                '2025-05-21_20-15-11.png',
+                '2025-05-22_10-04-30.png',
+                '2025-05-22_10-07-12.png'
+            ];
+            
+            // Use all carousel images for each game
+            const shuffledImages = [...carouselImages].sort(() => 0.5 - Math.random());
+            
+            shuffledImages.forEach((imageName, index) => {
+                screenshotSlides += `
+                    <div class="carousel-slide">
+                        <img src="images/carousel/${imageName}" alt="Game Screenshot ${index + 1}">
                     </div>`;
-                screenshotDots = '<span class="dot active"></span>';
-            }
+                screenshotDots += `
+                    <span class="carousel-dot ${index === 0 ? 'active' : ''}" onclick="event.stopPropagation(); goToSlide('${gameId}', ${index})"></span>`;
+            });
             
             // Create game card HTML
             const gameCard = document.createElement('div');
@@ -232,9 +226,13 @@ async function renderGameCards() {
             
             gameCard.innerHTML = `
                 <div class="game-image">
-                    <div class="screenshot-slider" data-game-id="${gameId}">
-                        ${screenshotSlides}
-                        <div class="slider-dots">
+                    <div class="screenshot-carousel" data-game-id="${gameId}">
+                        <div class="carousel-container">
+                            <div class="carousel-track" data-current-slide="0">
+                                ${screenshotSlides}
+                            </div>
+                        </div>
+                        <div class="carousel-dots">
                             ${screenshotDots}
                         </div>
                     </div>
@@ -255,10 +253,8 @@ async function renderGameCards() {
             // Insert before coming soon card
         gamesGrid.insertBefore(gameCard, comingSoonCard);
         
-        // Start auto-slide for screenshots if there are multiple
-        if (screenshots && screenshots.length > 1) {
-            startScreenshotAutoSlide(gameId);
-        }
+        // Start auto-slide for carousel (all 10 images)
+        startScreenshotAutoSlide(gameId);
         
         // Create indicator
         const indicator = document.createElement('div');
@@ -522,27 +518,50 @@ function stopGameCarouselAutoSlide() {
     }
 }
 
-// Screenshot auto-slide functions
+// Screenshot carousel functions
 let screenshotTimers = {};
 
+function goToSlide(gameId, slideIndex) {
+    const carousel = document.querySelector(`[data-game-id="${gameId}"]`);
+    if (!carousel) return;
+    
+    const track = carousel.querySelector('.carousel-track');
+    const dots = carousel.querySelectorAll('.carousel-dot');
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    
+    if (!track || slideIndex >= slides.length) return;
+    
+    // Update track position
+    track.style.transform = `translateX(-${slideIndex * 100}%)`;
+    track.setAttribute('data-current-slide', slideIndex);
+    
+    // Update dots
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === slideIndex);
+    });
+    
+    // Restart auto-slide
+    if (slides.length > 1) {
+        startScreenshotAutoSlide(gameId);
+    }
+}
+
 function startScreenshotAutoSlide(gameId) {
-    stopScreenshotAutoSlide(gameId); // Clear any existing timer
+    stopScreenshotAutoSlide(gameId);
     screenshotTimers[gameId] = setInterval(() => {
-        const slider = document.querySelector(`[data-game-id="${gameId}"] .screenshot-slider`);
-        if (slider) {
-            const screenshots = slider.querySelectorAll('.screenshot');
-            const dots = slider.querySelectorAll('.dot');
-            let currentIndex = Array.from(screenshots).findIndex(s => s.classList.contains('active'));
-            
-            screenshots[currentIndex].classList.remove('active');
-            dots[currentIndex].classList.remove('active');
-            
-            currentIndex = (currentIndex + 1) % screenshots.length;
-            
-            screenshots[currentIndex].classList.add('active');
-            dots[currentIndex].classList.add('active');
-        }
-    }, 3000); // Change slide every 3 seconds
+        const carousel = document.querySelector(`[data-game-id="${gameId}"]`);
+        if (!carousel) return;
+        
+        const track = carousel.querySelector('.carousel-track');
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        
+        if (!track || slides.length <= 1) return;
+        
+        let currentIndex = parseInt(track.getAttribute('data-current-slide')) || 0;
+        currentIndex = (currentIndex + 1) % slides.length;
+        
+        goToSlide(gameId, currentIndex);
+    }, 5000);
 }
 
 function stopScreenshotAutoSlide(gameId) {
