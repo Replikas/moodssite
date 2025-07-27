@@ -780,6 +780,23 @@ body {
     .chaos-text {
         font-size: 0.8rem;
     }
+    
+    .guide-item {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+    
+    .guide-video {
+        transform: scale(1.15);
+        margin-bottom: 2rem;
+        padding-bottom: 65%; /* Even taller for small phones */
+        border: 3px solid rgba(102, 192, 244, 0.8);
+        box-shadow: 0 15px 40px rgba(102, 192, 244, 0.4);
+    }
+    
+    .guide-video:hover {
+        transform: scale(1.18);
+    }
 }
 
 .slider-dots {
@@ -1143,17 +1160,20 @@ body {
     .guide-item {
         grid-template-columns: 1fr;
         gap: 2rem;
-        padding: 2rem;
+        padding: 1.5rem;
     }
     
     .guide-video {
         order: -1;
-        transform: scale(1);
-        margin-bottom: 1rem;
+        transform: scale(1.1);
+        margin-bottom: 1.5rem;
+        padding-bottom: 60%; /* Slightly taller aspect ratio for mobile */
+        border: 2px solid rgba(102, 192, 244, 0.6);
+        box-shadow: 0 10px 30px rgba(102, 192, 244, 0.3);
     }
     
     .guide-video:hover {
-        transform: scale(1.02);
+        transform: scale(1.12);
     }
 }
 
