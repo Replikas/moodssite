@@ -537,7 +537,7 @@ body {
 
 .chaos-text {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-top: 2rem;
     font-family: 'Orbitron', monospace;
@@ -545,12 +545,7 @@ body {
     opacity: 0.8;
 }
 
-.dimension-counter {
-    color: #66c0f4;
-    font-weight: 600;
-    text-shadow: 0 0 10px rgba(102, 192, 244, 0.5);
-    animation: dimensionFlicker 4s infinite;
-}
+
 
 .rick-quote {
     color: #60a5fa;
@@ -559,14 +554,7 @@ body {
     animation: quoteGlow 3s infinite alternate;
 }
 
-@keyframes dimensionFlicker {
-    0%, 90%, 100% {
-        opacity: 1;
-    }
-    95% {
-        opacity: 0.3;
-    }
-}
+
 
 @keyframes quoteGlow {
     0% {
